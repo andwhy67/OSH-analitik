@@ -268,8 +268,9 @@ jobs:
             VERSION="0.1.0+${{ github.run_number }}.$(git rev-parse --short HEAD)"
           fi
           ARTIFACT="OSH-Analitik-${VERSION}-linux-x64"
-          # rpm не принимает '+' в версии — заменяем на '~'
-          RPM_VERSION="${VERSION//+/~}"
+          # rpm не принимает '+' в версии. '~' нельзя — fpm делает tilde-expansion
+          # на пути к файлу и превращает его в $HOME. Используем '_'.
+          RPM_VERSION="${VERSION//+/_}"
           echo "version=$VERSION"          >> "$GITHUB_OUTPUT"
           echo "rpm_version=$RPM_VERSION"  >> "$GITHUB_OUTPUT"
           echo "artifact=$ARTIFACT"        >> "$GITHUB_OUTPUT"
