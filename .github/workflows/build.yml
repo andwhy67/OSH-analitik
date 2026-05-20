@@ -37,6 +37,10 @@ jobs:
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
+          cache-dependency-glob: |
+            requirements.txt
+            requirements-dev.txt
+            pyproject.toml
 
       - name: Установка ruff
         run: uv pip install --system "ruff>=0.5"
