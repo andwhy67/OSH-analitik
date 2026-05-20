@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QComboBox,
     QDoubleSpinBox,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QSpinBox,
-    QSplitter,
     QTabWidget,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -22,9 +18,9 @@ from app.modules.visualization.canvas import MplCanvas
 from app.modules.visualization.clusters import plot_cluster_scatter, plot_dendrogram
 from app.modules.visualization.graphs import plot_object_graph
 from app.modules.visualization.heatmaps import plot_binary_matrix, plot_similarity_matrix
+from app.ui.widgets import Placeholder
 
 from .base import BasePage
-from app.ui.widgets import Placeholder
 
 
 class VisualizationPage(BasePage):

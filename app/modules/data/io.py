@@ -9,7 +9,6 @@ import pandas as pd
 
 from app.modules.core.matrix import BinaryMatrix
 
-
 Orientation = Literal["objects_in_rows", "objects_in_columns"]
 
 

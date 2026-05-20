@@ -19,7 +19,6 @@ import pandas as pd
 
 from .matrix import BinaryMatrix
 
-
 # ---------- ранжирования ---------------------------------------------------
 
 

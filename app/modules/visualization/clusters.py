@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import numpy as np
 from matplotlib.figure import Figure
 from scipy.cluster.hierarchy import dendrogram
 from sklearn.manifold import MDS
 
 from app.modules.core.clustering import ClusterResult
-from .palette import PALETTE
 
+from .palette import PALETTE
 
 _CLUSTER_COLORS = [
     "#5aa9ff",

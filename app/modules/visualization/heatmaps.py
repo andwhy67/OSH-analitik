@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import numpy as np
-from matplotlib.figure import Figure
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.figure import Figure
 
 from app.modules.core.matrix import BinaryMatrix
+
 from .palette import PALETTE
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pandas as pd
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QGroupBox,
@@ -12,7 +13,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import Qt
 
 from app.modules.core.matrix import BinaryMatrix
 from app.modules.core.ranking import (
@@ -28,10 +28,9 @@ from app.modules.core.similarity import (
 )
 from app.modules.visualization.canvas import MplCanvas
 from app.modules.visualization.heatmaps import plot_similarity_matrix
-
-from .base import BasePage
 from app.ui.widgets import DataFrameTable, Placeholder
 
+from .base import BasePage
 
 _SIMILARITIES = {
     "Жаккар": jaccard_matrix,

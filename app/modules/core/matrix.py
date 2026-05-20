@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from typing import Iterable, Sequence
 
 import numpy as np
 import pandas as pd
@@ -38,7 +38,7 @@ class BinaryMatrix:
             raise ValueError(f"допустимы только значения 0/1, получено: {unique}")
 
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame) -> "BinaryMatrix":
+    def from_dataframe(cls, df: pd.DataFrame) -> BinaryMatrix:
         df = df.copy().fillna(0)
         objects = [str(x) for x in df.index.tolist()]
         features = [str(c) for c in df.columns.tolist()]
@@ -71,7 +71,7 @@ class BinaryMatrix:
     def feature_share(self) -> np.ndarray:
         return self.feature_frequency() / max(self.n_objects, 1)
 
-    def subset_features(self, indices: Sequence[int]) -> "BinaryMatrix":
+    def subset_features(self, indices: Sequence[int]) -> BinaryMatrix:
         idx = list(indices)
         return BinaryMatrix(
             self.data[:, idx],
@@ -79,12 +79,12 @@ class BinaryMatrix:
             features=[self.features[i] for i in idx],
         )
 
-    def drop_features(self, indices: Iterable[int]) -> "BinaryMatrix":
+    def drop_features(self, indices: Iterable[int]) -> BinaryMatrix:
         idx = sorted({int(i) for i in indices})
         keep = [j for j in range(self.n_features) if j not in idx]
         return self.subset_features(keep)
 
-    def with_added_feature(self, name: str, column: np.ndarray) -> "BinaryMatrix":
+    def with_added_feature(self, name: str, column: np.ndarray) -> BinaryMatrix:
         col = (np.asarray(column) != 0).astype(np.int8).reshape(-1, 1)
         if col.shape[0] != self.n_objects:
             raise ValueError("длина столбца не совпадает с числом объектов")

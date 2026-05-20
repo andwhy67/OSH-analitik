@@ -12,7 +12,6 @@ from app.modules.visualization.palette import apply_dark_style
 
 from .main_window import MainWindow
 
-
 STYLE_PATH = Path(__file__).resolve().parent.parent / "resources" / "styles" / "dark.qss"
 
 

@@ -1,9 +1,9 @@
-from .palette import DarkPalette, apply_dark_style
 from .canvas import MplCanvas
-from .heatmaps import plot_binary_matrix, plot_similarity_matrix
 from .charts import plot_feature_importance, plot_object_ranking, plot_richness
+from .clusters import plot_cluster_scatter, plot_dendrogram
 from .graphs import plot_object_graph
-from .clusters import plot_dendrogram, plot_cluster_scatter
+from .heatmaps import plot_binary_matrix, plot_similarity_matrix
+from .palette import DarkPalette, apply_dark_style
 
 __all__ = [
     "DarkPalette",

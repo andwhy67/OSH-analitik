@@ -5,6 +5,7 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 from app.modules.core.matrix import BinaryMatrix
+
 from .palette import PALETTE
 
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 import pandas as pd
 from PySide6.QtCore import QObject, Signal
@@ -14,7 +13,7 @@ from app.modules.core.optimization import OptimizationConfig, OptimizationResult
 class ExpertSession:
     """Сессия экспертного анализа. Хранит ранжирования и/или бинарные матрицы."""
 
-    rankings: Optional[pd.DataFrame] = None
+    rankings: pd.DataFrame | None = None
     binary_matrices: dict[str, BinaryMatrix] = field(default_factory=dict)
 
 
@@ -29,14 +28,14 @@ class AppState(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self._matrix: Optional[BinaryMatrix] = None
-        self._optimization: Optional[OptimizationResult] = None
+        self._matrix: BinaryMatrix | None = None
+        self._optimization: OptimizationResult | None = None
         self._experts: ExpertSession = ExpertSession()
         self._config: OptimizationConfig = OptimizationConfig()
-        self._source_path: Optional[str] = None
+        self._source_path: str | None = None
 
     @property
-    def matrix(self) -> Optional[BinaryMatrix]:
+    def matrix(self) -> BinaryMatrix | None:
         return self._matrix
 
     def set_matrix(
@@ -54,7 +53,7 @@ class AppState(QObject):
         self.matrix_changed.emit(matrix)
 
     @property
-    def optimization(self) -> Optional[OptimizationResult]:
+    def optimization(self) -> OptimizationResult | None:
         return self._optimization
 
     def set_optimization(self, result: OptimizationResult | None) -> None:
@@ -78,5 +77,5 @@ class AppState(QObject):
         self.config_changed.emit(config)
 
     @property
-    def source_path(self) -> Optional[str]:
+    def source_path(self) -> str | None:
         return self._source_path

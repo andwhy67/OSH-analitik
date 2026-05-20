@@ -1,5 +1,5 @@
 from .card import StatCard
-from .table import DataFrameTable
 from .placeholder import Placeholder
+from .table import DataFrameTable
 
 __all__ = ["StatCard", "DataFrameTable", "Placeholder"]

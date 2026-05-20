@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-
 ICONS_DIR = Path(__file__).resolve().parent.parent / "resources" / "icons"
 
 

@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QComboBox,
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
@@ -19,19 +18,19 @@ from PySide6.QtWidgets import (
 )
 
 from app.modules.core.clustering import cluster_experts
-from app.modules.data.samples import sample_file
 from app.modules.core.expert import (
     consensus_matrix,
     kendall_w,
     median_ranking,
 )
+from app.modules.data.samples import sample_file
 from app.modules.visualization.canvas import MplCanvas
 from app.modules.visualization.clusters import plot_cluster_scatter, plot_dendrogram
 from app.modules.visualization.heatmaps import plot_similarity_matrix
-
-from .base import BasePage
 from app.ui.state import ExpertSession
 from app.ui.widgets import DataFrameTable, Placeholder
+
+from .base import BasePage
 
 
 class ExpertPage(BasePage):

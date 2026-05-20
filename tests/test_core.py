@@ -3,22 +3,22 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from app.modules.core.matrix import BinaryMatrix
-from app.modules.core.similarity import (
-    inclusion_matrix,
-    jaccard_matrix,
-    sorensen_dice_matrix,
+from app.modules.core.expert import (
+    kemeny_distance,
+    kendall_w,
+    median_ranking,
 )
+from app.modules.core.matrix import BinaryMatrix
+from app.modules.core.optimization import KhubaevOptimizer, OptimizationConfig
 from app.modules.core.ranking import (
     missing_characteristics,
     rank_objects_by_dominance,
     rank_objects_by_richness,
 )
-from app.modules.core.optimization import KhubaevOptimizer, OptimizationConfig
-from app.modules.core.expert import (
-    kemeny_distance,
-    kendall_w,
-    median_ranking,
+from app.modules.core.similarity import (
+    inclusion_matrix,
+    jaccard_matrix,
+    sorensen_dice_matrix,
 )
 
 

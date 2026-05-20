@@ -8,8 +8,8 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Optional
 
 
 def candidate_dirs() -> Iterable[Path]:
@@ -30,14 +30,14 @@ def candidate_dirs() -> Iterable[Path]:
     yield Path.cwd() / "samples"
 
 
-def samples_dir() -> Optional[Path]:
+def samples_dir() -> Path | None:
     for c in candidate_dirs():
         if c.is_dir():
             return c
     return None
 
 
-def sample_file(name: str) -> Optional[Path]:
+def sample_file(name: str) -> Path | None:
     d = samples_dir()
     if d is None:
         return None

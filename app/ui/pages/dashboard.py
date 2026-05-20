@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QGridLayout, QHBoxLayout
 
 from app.modules.core.matrix import BinaryMatrix
 from app.modules.core.optimization import OptimizationResult
 from app.modules.visualization.canvas import MplCanvas
 from app.modules.visualization.charts import plot_richness
 from app.modules.visualization.heatmaps import plot_binary_matrix
+from app.ui.widgets import Placeholder, StatCard
 
 from .base import BasePage
-from app.ui.widgets import Placeholder, StatCard
 
 
 class DashboardPage(BasePage):

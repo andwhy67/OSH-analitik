@@ -26,9 +26,9 @@ from app.modules.core.optimization import (
 from app.modules.visualization.canvas import MplCanvas
 from app.modules.visualization.charts import plot_feature_importance, plot_object_ranking
 from app.modules.visualization.heatmaps import plot_similarity_matrix
+from app.ui.widgets import DataFrameTable, Placeholder
 
 from .base import BasePage
-from app.ui.widgets import DataFrameTable, Placeholder
 
 
 class OptimizationPage(BasePage):

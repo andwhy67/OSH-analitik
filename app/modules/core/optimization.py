@@ -25,7 +25,6 @@ from .matrix import BinaryMatrix
 from .ranking import missing_characteristics, rank_objects_by_dominance
 from .similarity import inclusion_matrix, jaccard_matrix
 
-
 SimilarityKind = Literal["jaccard", "inclusion"]
 
 

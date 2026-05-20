@@ -11,16 +11,14 @@ from PySide6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
-    QVBoxLayout,
-    QWidget,
 )
 
 from app.modules.core.matrix import BinaryMatrix
 from app.modules.data.io import DataLoader, DataSaveOptions, LoadOptions, save_matrix
 from app.modules.data.samples import sample_file
+from app.ui.widgets import DataFrameTable
 
 from .base import BasePage
-from app.ui.widgets import DataFrameTable
 
 
 class MatrixPage(BasePage):
