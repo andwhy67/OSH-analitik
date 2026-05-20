@@ -5,6 +5,7 @@ from scipy.cluster.hierarchy import dendrogram
 from sklearn.manifold import MDS
 
 from app.modules.core.clustering import ClusterResult
+
 from .palette import PALETTE
 
 _CLUSTER_COLORS = [
