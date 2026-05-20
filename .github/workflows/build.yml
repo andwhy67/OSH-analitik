@@ -22,6 +22,30 @@ permissions:
 
 jobs:
 
+  lint:
+    name: Линтинг (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установка Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Установка зависимостей
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Запуск ruff
+        run: |
+          ruff check .
+
   test:
     name: Тесты (pytest, Python ${{ matrix.python-version }})
     needs: lint

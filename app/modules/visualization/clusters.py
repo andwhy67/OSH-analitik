@@ -5,7 +5,6 @@ from scipy.cluster.hierarchy import dendrogram
 from sklearn.manifold import MDS
 
 from app.modules.core.clustering import ClusterResult
-
 from .palette import PALETTE
 
 _CLUSTER_COLORS = [
@@ -73,7 +72,7 @@ def plot_cluster_scatter(
         coords[:, 0], coords[:, 1], c=colors, s=140,
         edgecolor=PALETTE.border, linewidth=1.0,
     )
-    for (x, y), name in zip(coords, cluster.items):
+    for (x, y), name in zip(coords, cluster.items, strict=False):
         ax.annotate(
             name, (x, y), xytext=(6, 4), textcoords="offset points",
             color=PALETTE.text, fontsize=8,

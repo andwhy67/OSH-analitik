@@ -13,7 +13,7 @@ def build_similarity_graph(
     threshold: float = 0.4,
 ) -> nx.Graph:
     g = nx.Graph()
-    for i, name in enumerate(labels):
+    for name in labels:
         g.add_node(name, degree_weight=0.0)
     n = len(labels)
     for i in range(n):

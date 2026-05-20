@@ -25,7 +25,6 @@ from .matrix import BinaryMatrix
 def _ranks_to_pref(ranks: np.ndarray) -> np.ndarray:
     """Преобразовать вектор рангов в матрицу превосходства: P[i,j]=1, если
     объект i стоит выше j (т. е. имеет меньший ранг)."""
-    n = len(ranks)
     r = ranks.reshape(-1, 1)
     return (r < r.T).astype(np.int8)
 

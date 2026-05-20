@@ -5,7 +5,6 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.figure import Figure
 
 from app.modules.core.matrix import BinaryMatrix
-
 from .palette import PALETTE
 
 
