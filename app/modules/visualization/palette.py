@@ -7,19 +7,19 @@ import matplotlib as mpl
 
 @dataclass(frozen=True)
 class DarkPalette:
-    bg: str = "#0f1218"
-    surface: str = "#161a23"
-    surface_alt: str = "#1d2230"
-    border: str = "#2a2f3d"
-    text: str = "#e6e8ee"
+    bg: str = "#0e1117"
+    surface: str = "#141823"
+    surface_alt: str = "#1a1f2b"
+    border: str = "#262b39"
+    text: str = "#dce0ea"
     text_dim: str = "#8a93a6"
-    accent: str = "#5aa9ff"
-    accent_strong: str = "#3f86ff"
-    success: str = "#4cd790"
-    warning: str = "#f7b955"
-    danger: str = "#ef5b5b"
-    cmap_seq: str = "viridis"
-    cmap_div: str = "coolwarm"
+    accent: str = "#98a8c8"
+    accent_strong: str = "#7c8ab0"
+    success: str = "#7fb59a"
+    warning: str = "#d6a85f"
+    danger: str = "#c97676"
+    cmap_seq: str = "cividis"
+    cmap_div: str = "RdBu_r"
 
 
 PALETTE = DarkPalette()
@@ -50,7 +50,7 @@ def apply_dark_style() -> None:
             "legend.facecolor": PALETTE.surface_alt,
             "legend.edgecolor": PALETTE.border,
             "legend.labelcolor": PALETTE.text,
-            "font.family": ["Segoe UI", "Inter", "DejaVu Sans"],
+            "font.family": ["IBM Plex Sans", "Inter", "Segoe UI", "DejaVu Sans"],
             "font.size": 9,
         }
     )

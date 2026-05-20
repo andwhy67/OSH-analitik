@@ -17,8 +17,10 @@ class StatCard(QFrame):
 
         self._title = QLabel(title)
         self._title.setObjectName("CardTitle")
+        self._title.setWordWrap(True)
         self._value = QLabel(value)
         self._value.setObjectName("CardValue")
+        self._value.setWordWrap(True)
         self._caption = QLabel(caption)
         self._caption.setObjectName("CardCaption")
         self._caption.setWordWrap(True)

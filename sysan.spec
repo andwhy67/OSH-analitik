@@ -16,6 +16,7 @@ hiddenimports += collect_submodules("matplotlib.backends")
 datas = [
     ("app/resources/styles/dark.qss", "app/resources/styles"),
     ("app/resources/icons", "app/resources/icons"),
+    ("app/resources/fonts", "app/resources/fonts"),
     ("samples", "samples"),
 ]
 

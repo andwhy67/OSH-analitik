@@ -18,6 +18,7 @@ class Placeholder(QFrame):
         t = QLabel(title)
         t.setAlignment(Qt.AlignCenter)
         t.setStyleSheet("font-size: 14pt; font-weight: 600;")
+        t.setWordWrap(True)
         h = QLabel(hint)
         h.setAlignment(Qt.AlignCenter)
         h.setStyleSheet("color: #8a93a6;")

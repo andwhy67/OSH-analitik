@@ -24,6 +24,8 @@ from .state import AppState
 
 RESOURCES = Path(__file__).resolve().parent.parent / "resources"
 
+_NEEDS_MATRIX = "Сначала загрузите бинарную матрицу в разделе «Матрица объектов»."
+
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -38,13 +40,23 @@ class MainWindow(QMainWindow):
         items = [
             NavItem("dashboard", "Дашборд", "dashboard.svg"),
             NavItem("matrix", "Матрица объектов", "matrix.svg"),
-            NavItem("analysis", "Анализ", "analysis.svg"),
-            NavItem("optimization", "Оптимизация", "optimization.svg"),
+            NavItem(
+                "analysis", "Анализ", "analysis.svg",
+                requires=("matrix",), locked_hint=_NEEDS_MATRIX,
+            ),
+            NavItem(
+                "optimization", "Оптимизация", "optimization.svg",
+                requires=("matrix",), locked_hint=_NEEDS_MATRIX,
+            ),
             NavItem("expert", "Эксперты", "expert.svg"),
-            NavItem("visualization", "Визуализация", "visualization.svg"),
+            NavItem(
+                "visualization", "Визуализация", "visualization.svg",
+                requires=("matrix",), locked_hint=_NEEDS_MATRIX,
+            ),
         ]
         self.sidebar = Sidebar(items)
         self.sidebar.navigated.connect(self._navigate)
+        self._nav_items = {it.key: it for it in items}
 
         self.stack = QStackedWidget()
         self.pages = {
@@ -70,10 +82,27 @@ class MainWindow(QMainWindow):
         self.setStatusBar(status)
         self.state.status_message.connect(lambda msg: status.showMessage(msg, 6000))
 
+        self.state.matrix_changed.connect(self._refresh_availability)
+        self.state.experts_changed.connect(self._refresh_availability)
+        self._refresh_availability()
+
         self.sidebar.select("dashboard")
         self.stack.setCurrentWidget(self.pages["dashboard"])
 
     def _navigate(self, key: str) -> None:
         page = self.pages.get(key)
-        if page is not None:
+        if page is not None and self.sidebar.is_available(key):
             self.stack.setCurrentWidget(page)
+
+    def _refresh_availability(self, *_args) -> None:
+        has_matrix = self.state.matrix is not None
+        has_experts = (
+            self.state.experts is not None
+            and self.state.experts.rankings is not None
+            and not self.state.experts.rankings.empty
+        )
+        ctx = {"matrix": has_matrix, "experts": has_experts}
+        available = {}
+        for key, item in self._nav_items.items():
+            available[key] = all(ctx.get(req, True) for req in item.requires)
+        self.sidebar.set_availability(available)

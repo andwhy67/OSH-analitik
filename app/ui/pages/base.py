@@ -22,11 +22,13 @@ class BasePage(QWidget):
         if self.title:
             t = QLabel(self.title)
             t.setObjectName("PageTitle")
+            t.setWordWrap(True)
             self._root.addWidget(t)
         if self.subtitle:
             s = QLabel(self.subtitle)
             s.setObjectName("PageSubtitle")
             s.setWordWrap(True)
+            s.setMinimumWidth(0)
             self._root.addWidget(s)
 
         self.build()

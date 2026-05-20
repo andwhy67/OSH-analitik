@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 from app.modules.core.matrix import BinaryMatrix
 from app.modules.data.io import DataLoader, DataSaveOptions, LoadOptions, save_matrix
 from app.modules.data.samples import sample_file
-from app.ui.widgets import DataFrameTable
+from app.ui.widgets import DataFrameTable, HintBadge, InfoNote, ResultSummary
 
 from .base import BasePage
 
@@ -24,27 +24,43 @@ from .base import BasePage
 class MatrixPage(BasePage):
     title = "Матрица объектов"
     subtitle = (
-        "Загрузка и редактирование бинарной матрицы объектов и характеристик. "
-        "Поддерживаются CSV и XLSX; ориентация — объекты в строках либо в столбцах."
+        "Бинарная матрица «объект × характеристика»: 1 — признак у объекта присутствует, "
+        "0 — отсутствует. Это вход для всех остальных расчётов."
     )
 
     def build(self) -> None:
+        intro = InfoNote(
+            "Поддерживаются <b>CSV и XLSX</b>. В файле первая колонка — имена объектов "
+            "(либо имена характеристик, если выбрана соответствующая ориентация), "
+            "далее — столбцы со значениями <b>0/1</b>. Для пробы есть готовый пример и кнопка "
+            "случайной генерации."
+        )
+        self._root.addWidget(intro)
+
         controls = QGroupBox("Источник данных")
         controls_layout = QHBoxLayout(controls)
-        controls_layout.setSpacing(12)
+        controls_layout.setSpacing(10)
 
         self._orientation = QComboBox()
         self._orientation.addItem("Объекты в строках", "objects_in_rows")
         self._orientation.addItem("Характеристики в строках (объекты в столбцах)", "objects_in_columns")
+        self._orientation.setMinimumWidth(280)
+        orient_hint = HintBadge(
+            "Если в вашей таблице каждая строка — это объект, а столбцы — признаки, "
+            "оставьте первый вариант. Если наоборот (строка = признак, столбец = объект), "
+            "выберите второй — данные будут транспонированы при загрузке."
+        )
 
         self._btn_load = QPushButton("Загрузить файл…")
         self._btn_load.setObjectName("Primary")
         self._btn_load.clicked.connect(self._on_load)
 
-        self._btn_open_sample = QPushButton("Открыть пример (samples/laptops.csv)")
+        self._btn_open_sample = QPushButton("Открыть пример")
+        self._btn_open_sample.setToolTip("samples/laptops.csv — небольшая демонстрационная матрица")
         self._btn_open_sample.clicked.connect(self._on_open_sample)
 
         self._btn_sample = QPushButton("Сгенерировать случайный набор")
+        self._btn_sample.setToolTip("Создаёт детерминированный пример из 8 объектов и 11 признаков")
         self._btn_sample.clicked.connect(self._on_sample)
 
         self._btn_save = QPushButton("Сохранить…")
@@ -52,6 +68,7 @@ class MatrixPage(BasePage):
         self._btn_save.setEnabled(False)
 
         controls_layout.addWidget(QLabel("Ориентация:"))
+        controls_layout.addWidget(orient_hint)
         controls_layout.addWidget(self._orientation)
         controls_layout.addStretch(1)
         controls_layout.addWidget(self._btn_open_sample)
@@ -61,9 +78,10 @@ class MatrixPage(BasePage):
 
         self._root.addWidget(controls)
 
-        self._info_label = QLabel("Данные не загружены.")
-        self._info_label.setStyleSheet("color: #8a93a6;")
-        self._root.addWidget(self._info_label)
+        self._summary = ResultSummary(
+            "Данные не загружены. Откройте файл, демонстрационный пример или сгенерируйте набор."
+        )
+        self._root.addWidget(self._summary)
 
         self._table = DataFrameTable()
         self._root.addWidget(self._table, 1)
@@ -141,13 +159,17 @@ class MatrixPage(BasePage):
 
     def _on_matrix_changed(self, matrix: BinaryMatrix | None) -> None:
         if matrix is None:
-            self._info_label.setText("Данные не загружены.")
+            self._summary.setText(
+                "Данные не загружены. Откройте файл, демонстрационный пример или сгенерируйте набор."
+            )
             self._table.set_dataframe(pd.DataFrame())
             self._btn_save.setEnabled(False)
             return
         density = matrix.data.sum() / max(matrix.n_objects * matrix.n_features, 1)
-        self._info_label.setText(
-            f"Объектов: {matrix.n_objects}  ·  характеристик: {matrix.n_features}  ·  плотность: {density:.1%}"
+        self._summary.setText(
+            f"Загружено: <b>{matrix.n_objects}</b> объектов · "
+            f"<b>{matrix.n_features}</b> характеристик · плотность <b>{density:.1%}</b>. "
+            "Дальше — переход в «Анализ» или «Оптимизацию»."
         )
         self._table.set_dataframe(matrix.to_dataframe())
         self._btn_save.setEnabled(True)

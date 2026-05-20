@@ -26,68 +26,154 @@ from app.modules.core.optimization import (
 from app.modules.visualization.canvas import MplCanvas
 from app.modules.visualization.charts import plot_feature_importance, plot_object_ranking
 from app.modules.visualization.heatmaps import plot_similarity_matrix
-from app.ui.widgets import DataFrameTable, Placeholder
+from app.ui.widgets import (
+    DataFrameTable,
+    HintBadge,
+    InfoNote,
+    Placeholder,
+    ResultSummary,
+)
 
 from .base import BasePage
+
+
+def _row(label: str, widget: QWidget, hint: str) -> QWidget:
+    w = QWidget()
+    lay = QHBoxLayout(w)
+    lay.setContentsMargins(0, 0, 0, 0)
+    lay.setSpacing(6)
+    lbl = QLabel(label)
+    lbl.setMinimumWidth(0)
+    lay.addWidget(lbl)
+    lay.addWidget(HintBadge(hint))
+    lay.addStretch(1)
+    lay.addWidget(widget)
+    return w
 
 
 class OptimizationPage(BasePage):
     title = "Оптимизация состава характеристик"
     subtitle = (
-        "Универсальный метод Хубаева: итеративное удаление "
-        "малоинформативных характеристик и выявление кандидатов на добавление."
+        "Метод Хубаева: итеративно отсеиваются малоинформативные признаки и выявляются "
+        "характеристики, которых не хватает."
     )
 
     def build(self) -> None:
+        intro = InfoNote(
+            "На каждом шаге алгоритм оценивает <b>информативность</b> каждого признака — "
+            "как сильно его удаление меняет попарные сходства объектов. "
+            "Признаки слишком частые (общие для почти всех) и слишком редкие отсекаются по порогам частот; "
+            "остальные удаляются по очереди, пока их вклад ниже порога информативности."
+        )
+        self._root.addWidget(intro)
+
         controls = QGroupBox("Параметры алгоритма")
         layout = QHBoxLayout(controls)
+        layout.setSpacing(12)
 
         form = QFormLayout()
+        form.setHorizontalSpacing(8)
+        form.setVerticalSpacing(8)
+
         self._cmb_sim = QComboBox()
         self._cmb_sim.addItem("Жаккар", "jaccard")
         self._cmb_sim.addItem("Включение", "inclusion")
-        form.addRow("Мера сходства:", self._cmb_sim)
+        self._cmb_sim.setMinimumWidth(160)
+        form.addRow(
+            _row(
+                "Мера сходства:",
+                self._cmb_sim,
+                "Базовая метрика для оценки взаимного положения объектов. "
+                "«Жаккар» — симметричная, обычное значение по умолчанию. "
+                "«Включение» — асимметричная, подходит когда важна вложенность одних объектов в другие.",
+            ),
+            QLabel(""),
+        )
 
         self._sp_min_freq = QDoubleSpinBox()
         self._sp_min_freq.setRange(0.0, 1.0)
         self._sp_min_freq.setSingleStep(0.01)
         self._sp_min_freq.setDecimals(3)
         self._sp_min_freq.setValue(0.05)
-        form.addRow("Мин. частота признака:", self._sp_min_freq)
+        form.addRow(
+            _row(
+                "Мин. частота признака:",
+                self._sp_min_freq,
+                "Признаки, встречающиеся реже этого порога, исключаются как «редкие шумы». "
+                "0.05 = присутствует менее чем у 5% объектов.",
+            ),
+            QLabel(""),
+        )
 
         self._sp_max_freq = QDoubleSpinBox()
         self._sp_max_freq.setRange(0.0, 1.0)
         self._sp_max_freq.setSingleStep(0.01)
         self._sp_max_freq.setDecimals(3)
         self._sp_max_freq.setValue(0.98)
-        form.addRow("Макс. частота признака:", self._sp_max_freq)
+        form.addRow(
+            _row(
+                "Макс. частота признака:",
+                self._sp_max_freq,
+                "Признаки, встречающиеся почти у всех (выше порога), исключаются как «общие» — "
+                "они не различают объекты.",
+            ),
+            QLabel(""),
+        )
 
         self._sp_info = QDoubleSpinBox()
         self._sp_info.setRange(0.0, 10.0)
         self._sp_info.setDecimals(5)
         self._sp_info.setSingleStep(0.0001)
         self._sp_info.setValue(0.0001)
-        form.addRow("Порог информативности:", self._sp_info)
+        form.addRow(
+            _row(
+                "Порог информативности:",
+                self._sp_info,
+                "Минимальный вклад признака в попарные сходства, при котором его ещё имеет смысл оставить. "
+                "Ниже порога — признак исключается. Уменьшайте, чтобы сохранить больше признаков.",
+            ),
+            QLabel(""),
+        )
 
         self._sp_missing = QDoubleSpinBox()
         self._sp_missing.setRange(0.0, 1.0)
         self._sp_missing.setSingleStep(0.05)
         self._sp_missing.setDecimals(2)
         self._sp_missing.setValue(0.60)
-        form.addRow("Порог 'недостающих' (доля):", self._sp_missing)
+        form.addRow(
+            _row(
+                "Порог «недостающих»:",
+                self._sp_missing,
+                "Доля объектов, у которых должно отсутствовать значение, чтобы признак "
+                "считался кандидатом на добавление. 0.60 = отсутствует у 60%+ объектов.",
+            ),
+            QLabel(""),
+        )
 
         self._sp_iter = QSpinBox()
         self._sp_iter.setRange(1, 200)
         self._sp_iter.setValue(25)
-        form.addRow("Макс. итераций:", self._sp_iter)
+        form.addRow(
+            _row(
+                "Макс. итераций:",
+                self._sp_iter,
+                "Жёсткий предел на число шагов алгоритма. Обычно сходимость наступает быстрее.",
+            ),
+            QLabel(""),
+        )
 
         layout.addLayout(form, 1)
 
         right = QVBoxLayout()
+        right.setSpacing(8)
         self._btn_run = QPushButton("Запустить оптимизацию")
         self._btn_run.setObjectName("Primary")
         self._btn_run.clicked.connect(self._run)
-        self._btn_apply = QPushButton("Применить оптимизированный состав к матрице")
+        self._btn_apply = QPushButton("Применить состав к матрице")
+        self._btn_apply.setToolTip(
+            "Заменит текущую рабочую матрицу на оптимизированный состав. "
+            "Старый набор признаков можно вернуть, перезагрузив исходные данные."
+        )
         self._btn_apply.clicked.connect(self._apply)
         self._btn_apply.setEnabled(False)
         right.addStretch(1)
@@ -96,6 +182,11 @@ class OptimizationPage(BasePage):
         layout.addLayout(right)
 
         self._root.addWidget(controls)
+
+        self._summary = ResultSummary(
+            "Параметры подобраны под средние наборы. Подкорректируйте их под свою задачу и нажмите «Запустить оптимизацию»."
+        )
+        self._root.addWidget(self._summary)
 
         self._tabs = QTabWidget()
         self._root.addWidget(self._tabs, 1)
@@ -128,8 +219,11 @@ class OptimizationPage(BasePage):
         self._table_missing = DataFrameTable()
         self._tabs.addTab(self._wrap("Кандидаты на добавление", self._table_missing), "Недостающие характеристики")
 
-        self._lbl_history = QLabel("Шаги оптимизации:")
-        self._lbl_history.setStyleSheet("color: #8a93a6;")
+        self._lbl_history = QLabel(
+            "Каждая строка — один шаг алгоритма: какой признак удалён и как изменилась оценка."
+        )
+        self._lbl_history.setStyleSheet("color: #8a93a6; padding: 4px 2px;")
+        self._lbl_history.setWordWrap(True)
         self._tab_history = DataFrameTable()
         hist_w = QWidget()
         hist_l = QVBoxLayout(hist_w)
@@ -139,7 +233,7 @@ class OptimizationPage(BasePage):
 
         self._placeholder = Placeholder(
             "Нет матрицы",
-            "Загрузите бинарную матрицу на странице 'Матрица объектов'.",
+            "Загрузите бинарную матрицу на странице «Матрица объектов».",
         )
         self._root.addWidget(self._placeholder)
         self._tabs.hide()
@@ -233,3 +327,16 @@ class OptimizationPage(BasePage):
         else:
             hist_df["dropped"] = hist_df["dropped"].map(lambda xs: ", ".join(xs))
         self._tab_history.set_dataframe(hist_df)
+
+        kept = len(opt.kept_features)
+        removed = len(opt.removed_features)
+        total = kept + removed
+        share = removed / total if total else 0.0
+        miss = 0 if opt.missing.empty else len(opt.missing)
+        self._summary.setText(
+            f"Готово. Сохранено <b>{kept}</b> из <b>{total}</b> признаков "
+            f"(исключено {removed}, это {share:.0%}); шагов алгоритма: <b>{len(opt.history)}</b>; "
+            f"кандидатов на добавление: <b>{miss}</b>. "
+            "Сравните «Сходство: до / после», чтобы оценить, насколько сокращение не повредило "
+            "различительной способности набора."
+        )

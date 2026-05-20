@@ -18,7 +18,7 @@ from app.modules.visualization.canvas import MplCanvas
 from app.modules.visualization.clusters import plot_cluster_scatter, plot_dendrogram
 from app.modules.visualization.graphs import plot_object_graph
 from app.modules.visualization.heatmaps import plot_binary_matrix, plot_similarity_matrix
-from app.ui.widgets import Placeholder
+from app.ui.widgets import HintBadge, InfoNote, Placeholder, ResultSummary
 
 from .base import BasePage
 
@@ -26,11 +26,19 @@ from .base import BasePage
 class VisualizationPage(BasePage):
     title = "Визуализация"
     subtitle = (
-        "Сводное представление: тепловые карты, граф связей, "
+        "Сводный визуальный разрез: тепловые карты, граф связей, "
         "иерархическая кластеризация и MDS-проекция объектов."
     )
 
     def build(self) -> None:
+        intro = InfoNote(
+            "Раздел не выполняет новых расчётов — он показывает структуру набора "
+            "<b>под разными углами</b>: где скопления, где изолированные объекты, "
+            "где видна неоднородность. Удобен как для презентации результата, так и для "
+            "быстрой проверки гипотез."
+        )
+        self._root.addWidget(intro)
+
         controls = QGroupBox("Параметры визуализации")
         cl = QHBoxLayout(controls)
 
@@ -40,16 +48,25 @@ class VisualizationPage(BasePage):
         self._sp_threshold.setDecimals(2)
         self._sp_threshold.setValue(0.4)
         self._sp_threshold.valueChanged.connect(self._refresh)
+        thr_hint = HintBadge(
+            "Только пары объектов со сходством Жаккара ≥ порога соединяются ребром в графе. "
+            "Выше порог — реже связи."
+        )
 
         self._sp_clusters = QSpinBox()
         self._sp_clusters.setRange(1, 20)
         self._sp_clusters.setValue(3)
         self._sp_clusters.valueChanged.connect(self._refresh)
+        cl_hint = HintBadge(
+            "На сколько групп разбить объекты в дендрограмме и MDS-проекции."
+        )
 
         cl.addWidget(QLabel("Порог связи в графе:"))
+        cl.addWidget(thr_hint)
         cl.addWidget(self._sp_threshold)
-        cl.addSpacing(20)
+        cl.addSpacing(16)
         cl.addWidget(QLabel("Кластеров объектов:"))
+        cl.addWidget(cl_hint)
         cl.addWidget(self._sp_clusters)
         cl.addStretch(1)
 
@@ -60,6 +77,10 @@ class VisualizationPage(BasePage):
 
         self._root.addWidget(controls)
         self._controls = controls
+
+        self._summary = ResultSummary("")
+        self._summary.hide()
+        self._root.addWidget(self._summary)
 
         self._tabs = QTabWidget()
         self._root.addWidget(self._tabs, 1)
@@ -87,7 +108,7 @@ class VisualizationPage(BasePage):
 
         self._placeholder = Placeholder(
             "Нет данных",
-            "Загрузите матрицу на странице 'Матрица объектов'.",
+            "Загрузите матрицу на странице «Матрица объектов».",
         )
         self._root.addWidget(self._placeholder)
         self._tabs.hide()
@@ -100,10 +121,12 @@ class VisualizationPage(BasePage):
             self._tabs.hide()
             self._placeholder.show()
             self._controls.setEnabled(False)
+            self._summary.hide()
             return
         self._placeholder.hide()
         self._tabs.show()
         self._controls.setEnabled(True)
+        self._summary.show()
         self._refresh()
 
     def _refresh(self) -> None:
@@ -132,3 +155,16 @@ class VisualizationPage(BasePage):
         self._canvas_dendro.draw_idle()
         plot_cluster_scatter(self._canvas_scatter.figure, clusters)
         self._canvas_scatter.draw_idle()
+
+        try:
+            import numpy as np
+            iu = np.triu_indices_from(sim, k=1)
+            edges = int((sim[iu] >= self._sp_threshold.value()).sum()) if iu[0].size else 0
+            total_pairs = iu[0].size
+            self._summary.setText(
+                f"Объектов: <b>{matrix.n_objects}</b>, кластеров: <b>{n_clusters}</b>. "
+                f"При пороге {self._sp_threshold.value():.2f} в графе остаётся "
+                f"<b>{edges}</b> из {total_pairs} возможных связей."
+            )
+        except Exception:
+            pass

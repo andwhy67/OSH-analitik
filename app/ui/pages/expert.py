@@ -28,30 +28,56 @@ from app.modules.visualization.canvas import MplCanvas
 from app.modules.visualization.clusters import plot_cluster_scatter, plot_dendrogram
 from app.modules.visualization.heatmaps import plot_similarity_matrix
 from app.ui.state import ExpertSession
-from app.ui.widgets import DataFrameTable, Placeholder
+from app.ui.widgets import (
+    DataFrameTable,
+    HintBadge,
+    InfoNote,
+    Placeholder,
+    ResultSummary,
+)
 
 from .base import BasePage
+
+
+def _w_interpretation(w: float) -> str:
+    if w >= 0.7:
+        return "сильная согласованность"
+    if w >= 0.5:
+        return "умеренная согласованность"
+    if w >= 0.3:
+        return "слабая согласованность"
+    return "согласованность практически отсутствует"
 
 
 class ExpertPage(BasePage):
     title = "Экспертный анализ"
     subtitle = (
-        "Агрегация ранжирований экспертов: расстояние Кемени, медианное "
-        "ранжирование, согласованность по Кендаллу, кластеризация экспертов."
+        "Агрегация ранжирований экспертов: матрица консенсуса, медиана Кемени, "
+        "коэффициент конкордации Кендалла, кластеризация экспертов."
     )
 
     def build(self) -> None:
+        intro = InfoNote(
+            "Каждая строка файла — это один <b>эксперт</b>, столбцы — <b>объекты</b>, "
+            "а значения — присвоенные ранги (1 — самый приоритетный). "
+            "Раздел показывает, насколько эксперты согласны между собой и какое усреднённое ранжирование "
+            "лучше всего описывает их совокупное мнение."
+        )
+        self._root.addWidget(intro)
+
         controls = QGroupBox("Данные экспертов")
         layout = QHBoxLayout(controls)
+        layout.setSpacing(10)
 
         self._btn_load = QPushButton("Загрузить ранжирования…")
         self._btn_load.setObjectName("Primary")
         self._btn_load.clicked.connect(self._on_load)
 
-        self._btn_open_sample = QPushButton("Открыть пример (samples/experts_rankings.csv)")
+        self._btn_open_sample = QPushButton("Открыть пример")
+        self._btn_open_sample.setToolTip("samples/experts_rankings.csv")
         self._btn_open_sample.clicked.connect(self._on_open_sample)
 
-        self._btn_sample = QPushButton("Сгенерировать случайный пример")
+        self._btn_sample = QPushButton("Случайный пример")
         self._btn_sample.clicked.connect(self._on_sample)
 
         self._sp_clusters = QSpinBox()
@@ -62,20 +88,27 @@ class ExpertPage(BasePage):
         self._btn_calc = QPushButton("Пересчитать")
         self._btn_calc.clicked.connect(self._refresh)
 
+        clusters_hint = HintBadge(
+            "На сколько групп разбить экспертов по близости их ранжирований. "
+            "Помогает увидеть, расходятся ли эксперты на несколько лагерей."
+        )
+
         layout.addWidget(self._btn_load)
         layout.addWidget(self._btn_open_sample)
         layout.addWidget(self._btn_sample)
         layout.addStretch(1)
         layout.addWidget(QLabel("Кластеров экспертов:"))
+        layout.addWidget(clusters_hint)
         layout.addWidget(self._sp_clusters)
         layout.addWidget(self._btn_calc)
 
         self._root.addWidget(controls)
 
-        self._info = QLabel("Загрузите файл с ранжированиями экспертов (строки — эксперты, столбцы — объекты, значения — ранги).")
-        self._info.setStyleSheet("color: #8a93a6;")
-        self._info.setWordWrap(True)
-        self._root.addWidget(self._info)
+        self._summary = ResultSummary(
+            "Загрузите файл с ранжированиями экспертов (строки — эксперты, столбцы — объекты, "
+            "значения — ранги)."
+        )
+        self._root.addWidget(self._summary)
 
         self._tabs = QTabWidget()
         self._root.addWidget(self._tabs, 1)
@@ -93,7 +126,8 @@ class ExpertPage(BasePage):
 
         self._table_median = DataFrameTable()
         self._lbl_w = QLabel("—")
-        self._lbl_w.setStyleSheet("color: #c9cfdb; padding: 8px;")
+        self._lbl_w.setStyleSheet("color: #b4bbcc; padding: 8px; font-size: 10pt;")
+        self._lbl_w.setWordWrap(True)
         med_w = QWidget()
         med_l = QVBoxLayout(med_w)
         med_l.addWidget(self._lbl_w)
@@ -111,7 +145,7 @@ class ExpertPage(BasePage):
 
         self._placeholder = Placeholder(
             "Экспертные данные не загружены",
-            "Загрузите CSV/XLSX с ранжированиями или используйте демонстрационный пример.",
+            "Загрузите CSV / XLSX с ранжированиями или используйте демонстрационный пример.",
         )
         self._root.addWidget(self._placeholder)
         self._tabs.hide()
@@ -204,7 +238,7 @@ class ExpertPage(BasePage):
         cons = consensus_matrix(df)
         plot_similarity_matrix(
             self._canvas_cons.figure, cons, list(df.columns),
-            title="Матрица консенсуса (доля экспертов, ставящих i выше j)",
+            title="Матрица консенсуса",
         )
         self._canvas_cons.draw_idle()
         self._table_cons.set_dataframe(
@@ -217,9 +251,12 @@ class ExpertPage(BasePage):
         self._table_median.set_dataframe(med_df)
         w = kendall_w(df)
         self._lbl_w.setText(
-            f"Коэффициент конкордации Кендалла W = {w:.3f}  "
-            f"(0 — полный разнобой, 1 — полное согласие экспертов)"
+            f"<b>Коэффициент конкордации Кендалла W = {w:.3f}</b> &nbsp; "
+            f"({_w_interpretation(w)}; 0 — полный разнобой, 1 — полное согласие)."
+            "<br>В таблице ниже — усреднённое ранжирование объектов (медиана Кемени), "
+            "минимизирующее суммарное расстояние до всех экспертов."
         )
+        self._lbl_w.setTextFormat(Qt.RichText)
 
         n_clusters = min(self._sp_clusters.value(), df.shape[0])
         clusters = cluster_experts(df, n_clusters=n_clusters)
@@ -227,3 +264,10 @@ class ExpertPage(BasePage):
         self._canvas_dendro.draw_idle()
         plot_cluster_scatter(self._canvas_scatter.figure, clusters, title="Кластеры экспертов")
         self._canvas_scatter.draw_idle()
+
+        leader = med_df.iloc[0]["object"] if not med_df.empty else "—"
+        self._summary.setText(
+            f"Экспертов: <b>{df.shape[0]}</b>, объектов: <b>{df.shape[1]}</b>. "
+            f"Согласованность W = <b>{w:.3f}</b> ({_w_interpretation(w)}). "
+            f"Текущий лидер по медиане Кемени: <b>{leader}</b>. "
+        )
