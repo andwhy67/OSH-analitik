@@ -331,8 +331,8 @@ class OptimizationPage(BasePage):
         share = removed / total if total else 0.0
         miss = 0 if opt.missing.empty else len(opt.missing)
         self._summary.setText(
-            f"Готово. Сохранено <b>{kept}</b> из <b>{total}</b> признаков "
-            f"(исключено {removed}, {share:.0%}); шагов: <b>{len(opt.history)}</b>; "
-            f"кандидатов на добавление: <b>{miss}</b>. "
+            f"Готово. Из <b>{total}</b> признаков сохранено <b>{kept}</b>, "
+            f"исключено <b>{removed}</b> — это <b>{share:.0%}</b> исходного состава. "
+            f"Шагов алгоритма: <b>{len(opt.history)}</b>; кандидатов на добавление: <b>{miss}</b>. "
             "Сравните «Сходство: до / после», чтобы оценить, не пострадала ли различительная способность."
         )

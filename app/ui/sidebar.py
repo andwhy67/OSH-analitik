@@ -17,8 +17,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.ui.widgets import RailIndicator
-
 ICONS_DIR = Path(__file__).resolve().parent.parent / "resources" / "icons"
 
 
@@ -127,14 +125,10 @@ class Sidebar(QFrame):
         footer.setAlignment(Qt.AlignLeft)
         layout.addWidget(footer)
 
-        self._rail = RailIndicator(self)
-        self._rail.raise_()
-
     def select(self, key: str) -> None:
         row = self._rows.get(key)
         if row is not None and row.button.isEnabled():
             row.button.setChecked(True)
-            self._rail.move_to(row)
 
     def set_availability(self, available: dict[str, bool]) -> None:
         """Включает/выключает пункты по словарю флагов доступности."""

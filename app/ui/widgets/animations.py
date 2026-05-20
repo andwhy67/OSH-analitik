@@ -185,7 +185,6 @@ class GlowPulse(QObject):
         self._anim.setLoopCount(-1)
         self._anim.valueChanged.connect(self._on_step)
         self._running = False
-        widget.installEventFilter(self)
 
     def start(self) -> None:
         if self._running:
@@ -208,13 +207,6 @@ class GlowPulse(QObject):
         c = QColor(152, 168, 200)
         c.setAlpha(int(180 * env))
         self._effect.setColor(c)
-
-    def eventFilter(self, obj, ev):  # noqa: N802
-        from PySide6.QtCore import QEvent
-        if obj is self._widget and ev.type() in (QEvent.Enter, QEvent.FocusIn):
-            if self._running:
-                self.stop()
-        return False
 
 
 class RailIndicator(QWidget):

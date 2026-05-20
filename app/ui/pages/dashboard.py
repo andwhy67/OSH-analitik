@@ -119,7 +119,7 @@ class DashboardPage(BasePage):
             total = kept + removed
             share = removed / total if total else 0.0
             self._next_step.setText(
-                f"Оптимизация выполнена: <b>сохранено {kept}</b> из {total} признаков "
-                f"(исключено {removed}, это {share:.0%}). "
+                f"Оптимизация выполнена: из <b>{total}</b> признаков сохранено <b>{kept}</b>, "
+                f"исключено <b>{removed}</b> — это <b>{share:.0%}</b> исходного состава. "
                 "Можно перейти в «Визуализацию» или применить сокращённый состав к матрице."
             )

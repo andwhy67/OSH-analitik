@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QEasingCurve, QPoint, Qt, QVariantAnimation
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -13,8 +14,6 @@ from PySide6.QtWidgets import (
     QWidget,
     QWidgetAction,
 )
-
-from .animations import Fader
 
 
 class HintBadge(QPushButton):
@@ -96,21 +95,49 @@ class InfoButton(QToolButton):
 
 
 class ResultSummary(QLabel):
-    """Однострочный/многострочный текстовый вывод-интерпретация результата."""
+    """Текст-интерпретация результата с подсветкой при обновлении.
+
+    При смене текста цвет проявляется из акцентного `#98a8c8` к спокойному
+    `#b4bbcc` за ~220 мс. Не использует QGraphicsEffect, поэтому
+    корректно работает внутри страницы с собственным fade-эффектом.
+    """
+
+    _START = QColor("#98a8c8")
+    _END = QColor("#b4bbcc")
 
     def __init__(self, text: str = "", parent=None):
         super().__init__(text, parent)
         self.setObjectName("ResultSummary")
         self.setWordWrap(True)
         self.setTextFormat(Qt.RichText)
-        self._fader = Fader(self)
+        self._anim = QVariantAnimation(self)
+        self._anim.setDuration(220)
+        self._anim.setEasingCurve(QEasingCurve.OutExpo)
+        self._anim.setStartValue(self._START)
+        self._anim.setEndValue(self._END)
+        self._anim.valueChanged.connect(self._apply_color)
+        self._apply_color(self._END)
 
     def setText(self, text: str) -> None:  # type: ignore[override]
         if text == self.text():
             super().setText(text)
             return
         super().setText(text)
-        self._fader.fade_in(duration_ms=120, start=0.0)
+        self._anim.stop()
+        self._apply_color(self._START)
+        self._anim.start()
+
+    def _apply_color(self, c: QColor) -> None:
+        rgb = f"rgb({c.red()},{c.green()},{c.blue()})"
+        self.setStyleSheet(
+            "QLabel#ResultSummary {"
+            f" color: {rgb};"
+            " padding: 8px 12px;"
+            " background-color: #131722;"
+            " border: 1px solid #1f2330;"
+            " border-radius: 6px;"
+            "}"
+        )
 
 
 class SectionTitle(QLabel):

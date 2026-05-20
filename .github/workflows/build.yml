@@ -214,3 +214,198 @@ jobs:
           files: |
             dist/${{ steps.meta.outputs.artifact }}.zip
             dist/${{ steps.meta.outputs.artifact }}.sha256.txt
+
+  build-linux:
+    name: Сборка Linux (RPM + DEB)
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установка Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Установка uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            requirements.txt
+            requirements-build.txt
+
+      - name: Установка зависимостей сборки
+        run: uv pip install --system -r requirements-build.txt
+
+      - name: Системные пакеты для Qt и fpm
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 \
+            libxcb-xfixes0 libxcb-xinerama0 libxcb-xkb1 libglx-mesa0 \
+            libegl1 libfontconfig1 libxcomposite1 libxdamage1 libxrandr2 \
+            libxtst6 libxi6 libdbus-1-3 rpm ruby ruby-dev build-essential
+          sudo gem install --no-document fpm
+
+      - name: Кэш PyInstaller build/
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: pyinstaller-${{ runner.os }}-${{ hashFiles('sysan.spec', 'requirements.txt', 'requirements-build.txt') }}-${{ hashFiles('app/**/*.py') }}
+          restore-keys: |
+            pyinstaller-${{ runner.os }}-${{ hashFiles('sysan.spec', 'requirements.txt', 'requirements-build.txt') }}-
+            pyinstaller-${{ runner.os }}-
+
+      - name: Определение версии
+        id: meta
+        run: |
+          REF="${{ github.ref }}"
+          if [[ "$REF" == refs/tags/v* ]]; then
+            VERSION="${REF#refs/tags/v}"
+          else
+            VERSION="0.1.0+${{ github.run_number }}.$(git rev-parse --short HEAD)"
+          fi
+          ARTIFACT="OSH-Analitik-${VERSION}-linux-x64"
+          # rpm не принимает '+' в версии — заменяем на '~'
+          RPM_VERSION="${VERSION//+/~}"
+          echo "version=$VERSION"          >> "$GITHUB_OUTPUT"
+          echo "rpm_version=$RPM_VERSION"  >> "$GITHUB_OUTPUT"
+          echo "artifact=$ARTIFACT"        >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION (rpm: $RPM_VERSION)"
+
+      - name: Сборка PyInstaller
+        run: pyinstaller --noconfirm sysan.spec
+
+      - name: Копирование samples и документации в bundle
+        run: |
+          mkdir -p dist/OSH-Analitik/samples
+          cp -f samples/* dist/OSH-Analitik/samples/
+          cp -f README.md dist/OSH-Analitik/README.md
+          ls -la dist/OSH-Analitik/
+
+      - name: Дымовой запуск (offscreen)
+        env:
+          QT_QPA_PLATFORM: offscreen
+          SYSAN_SMOKE_EXIT_MS: "3500"
+        run: |
+          exe="dist/OSH-Analitik/OSH-Analitik"
+          if [[ ! -x "$exe" ]]; then
+            echo "::error::PyInstaller не собрал $exe"
+            exit 1
+          fi
+          timeout 20s "$exe"
+          echo "Smoke-запуск ок"
+
+      - name: Подготовка staging-каталога пакета
+        run: |
+          PKG=pkg
+          rm -rf "$PKG"
+          install -d "$PKG/opt/osh-analitik"
+          install -d "$PKG/usr/bin"
+          install -d "$PKG/usr/share/applications"
+          install -d "$PKG/usr/share/icons/hicolor/256x256/apps"
+          install -d "$PKG/usr/share/doc/osh-analitik"
+
+          # сам bundle
+          cp -r dist/OSH-Analitik/. "$PKG/opt/osh-analitik/"
+          chmod 755 "$PKG/opt/osh-analitik/OSH-Analitik"
+
+          # запускалка в PATH
+          cat > "$PKG/usr/bin/osh-analitik" <<'EOF'
+          #!/bin/sh
+          exec /opt/osh-analitik/OSH-Analitik "$@"
+          EOF
+          chmod 755 "$PKG/usr/bin/osh-analitik"
+
+          # .desktop
+          cat > "$PKG/usr/share/applications/osh-analitik.desktop" <<'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=ОСХ-Аналитик
+          GenericName=OSH-Analitik
+          Comment=Оптимизация состава характеристик объектов
+          Exec=/usr/bin/osh-analitik
+          Icon=osh-analitik
+          Terminal=false
+          Categories=Science;Education;Math;
+          StartupWMClass=OSH-Analitik
+          EOF
+
+          # иконка для меню приложений
+          if [[ -f app/resources/icons/osh-analitik.png ]]; then
+            cp app/resources/icons/osh-analitik.png \
+               "$PKG/usr/share/icons/hicolor/256x256/apps/osh-analitik.png"
+          fi
+
+          # документация
+          cp README.md "$PKG/usr/share/doc/osh-analitik/README.md"
+
+      - name: Сборка пакетов через fpm
+        run: |
+          mkdir -p dist
+          VER='${{ steps.meta.outputs.version }}'
+          RVER='${{ steps.meta.outputs.rpm_version }}'
+          DESC='ОСХ-Аналитик — СППР для оптимизации состава характеристик объектов (метод Г. Н. Хубаева).'
+          URL='https://github.com/${{ github.repository }}'
+
+          # DEB
+          fpm -s dir -t deb \
+            -n osh-analitik -v "$VER" --license MIT --vendor "OSH-Analitik" \
+            --description "$DESC" --url "$URL" --architecture amd64 \
+            --maintainer "OSH-Analitik <noreply@local>" \
+            --depends libc6 --depends libfontconfig1 --depends libxcb1 \
+            --deb-no-default-config-files \
+            -p "dist/osh-analitik_${VER}_amd64.deb" \
+            -C pkg .
+
+          # RPM
+          fpm -s dir -t rpm \
+            -n osh-analitik -v "$RVER" --license MIT --vendor "OSH-Analitik" \
+            --description "$DESC" --url "$URL" --architecture x86_64 \
+            --rpm-summary "Оптимизация состава характеристик объектов" \
+            -p "dist/osh-analitik-${RVER}-1.x86_64.rpm" \
+            -C pkg .
+
+          ls -la dist/*.{deb,rpm}
+
+      - name: Контрольная сумма SHA256
+        run: |
+          cd dist
+          sha256sum *.deb *.rpm > "${{ steps.meta.outputs.artifact }}.sha256.txt"
+          cat "${{ steps.meta.outputs.artifact }}.sha256.txt"
+
+      - name: Загрузка artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.artifact }}
+          path: |
+            dist/*.deb
+            dist/*.rpm
+            dist/${{ steps.meta.outputs.artifact }}.sha256.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Прикрепление к релизу (только при теге vX.Y.Z)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*.deb
+            dist/*.rpm
+            dist/${{ steps.meta.outputs.artifact }}.sha256.txt
+
+      - name: Черновой релиз (по запросу из workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly-${{ github.run_number }}
+          name: Nightly build ${{ steps.meta.outputs.version }}
+          draft: true
+          generate_release_notes: true
+          files: |
+            dist/*.deb
+            dist/*.rpm
+            dist/${{ steps.meta.outputs.artifact }}.sha256.txt

@@ -58,7 +58,7 @@ QPushButton#NavButton:hover {
 QPushButton#NavButton:checked {
     background-color: #141927;
     color: #ffffff;
-    border-left: 3px solid transparent;
+    border-left: 3px solid #7c8ab0;
     font-weight: 500;
 }
 
