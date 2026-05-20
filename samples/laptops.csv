@@ -1,0 +1,11 @@
+object,CPU_6cores,RAM_16GB,SSD_NVMe,GPU_dedicated,Display_4K,Touchscreen,Backlight,Fingerprint,WiFi_6E,Thunderbolt4,Weight_under_1_6kg
+Laptop_A,1,1,1,1,1,0,1,1,1,1,0
+Laptop_B,1,1,1,0,0,0,1,0,1,0,1
+Laptop_C,1,0,1,0,0,0,1,1,0,0,1
+Laptop_D,1,1,1,1,1,1,1,1,1,1,0
+Laptop_E,0,0,1,0,0,0,0,0,0,0,1
+Laptop_F,1,1,1,0,0,0,1,1,1,0,1
+Laptop_G,1,1,1,1,0,0,1,1,1,1,1
+Laptop_H,0,1,1,0,0,0,1,0,0,0,1
+Laptop_I,1,1,1,0,1,0,1,1,1,1,0
+Laptop_J,1,0,0,0,0,0,0,0,0,0,1

@@ -1,0 +1,38 @@
+# venv / интерпретатор
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# тесты и покрытие
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+junit-results.xml
+
+# линтеры
+.ruff_cache/
+.mypy_cache/
+
+# сборка
+build/
+dist/
+*.egg-info/
+*.manifest
+# .spec файлы PyInstaller — кроме корневого sysan.spec
+build/*.spec
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# временные
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
