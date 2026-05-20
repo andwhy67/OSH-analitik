@@ -147,7 +147,7 @@ jobs:
             exit 1
           }
           Write-Host "Запуск $exe в smoke-режиме (выход через 3.5 c)"
-          $proc = Start-Process -FilePath $exe -PassThru -WindowStyle Hidden -NoNewWindow
+          $proc = Start-Process -FilePath $exe -PassThru -WindowStyle Hidden
           if (-not $proc.WaitForExit(20000)) {
             Write-Error "Процесс не завершился за 20 c — таймер smoke-режима не сработал"
             Stop-Process -Id $proc.Id -Force
