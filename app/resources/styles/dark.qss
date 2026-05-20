@@ -21,22 +21,21 @@ QLabel#SidebarBrand {
     color: #ffffff;
     font-size: 15pt;
     font-weight: 600;
-    padding: 22px 22px 2px 22px;
-    letter-spacing: 0.2px;
+    padding: 20px 22px 2px 22px;
 }
 
 QLabel#SidebarSubtitle {
-    color: #7a8398;
+    color: #6c7689;
     font-size: 8pt;
-    padding: 0 22px 18px 22px;
-    letter-spacing: 0.6px;
+    padding: 0 22px 16px 22px;
+    letter-spacing: 0.4px;
 }
 
 QLabel#SectionHeader {
-    color: #6c7689;
+    color: #5a6478;
     font-size: 7.5pt;
     font-weight: 600;
-    padding: 16px 24px 6px 24px;
+    padding: 14px 24px 4px 24px;
     letter-spacing: 1.4px;
     text-transform: uppercase;
 }
@@ -45,7 +44,7 @@ QPushButton#NavButton {
     background-color: transparent;
     color: #b4bbcc;
     text-align: left;
-    padding: 10px 20px 10px 21px;
+    padding: 9px 20px 9px 21px;
     border: none;
     border-left: 3px solid transparent;
     font-size: 10pt;
@@ -59,7 +58,7 @@ QPushButton#NavButton:hover {
 QPushButton#NavButton:checked {
     background-color: #141927;
     color: #ffffff;
-    border-left: 3px solid #7c8ab0;
+    border-left: 3px solid transparent;
     font-weight: 500;
 }
 
@@ -72,37 +71,54 @@ QPushButton#NavButton:disabled {
 QLabel#SidebarFooter {
     color: #4a526a;
     font-size: 8pt;
-    padding: 14px 22px;
+    padding: 12px 22px;
 }
 
 /* ============ Page header ============ */
+
+QWidget#PageHeader {
+    background: transparent;
+}
 
 QLabel#PageTitle {
     font-size: 17pt;
     font-weight: 600;
     color: #ffffff;
-    padding: 0 0 2px 0;
-    letter-spacing: 0.1px;
 }
 
 QLabel#PageSubtitle {
     font-size: 9.5pt;
     color: #8a93a6;
-    padding-bottom: 6px;
 }
 
-QLabel#PageNote,
-QFrame#InfoNote QLabel {
-    color: #b4bbcc;
-    font-size: 9.5pt;
+QToolButton#InfoButton {
+    background-color: transparent;
+    border: 1px solid #2a2f3d;
+    color: #8a93a6;
+    border-radius: 11px;
+    min-width: 22px;
+    max-width: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    font-size: 9pt;
+    font-weight: 600;
+    padding: 0;
 }
-
-QFrame#InfoNote {
+QToolButton#InfoButton:hover, QToolButton#InfoButton:checked {
+    color: #ffffff;
+    border-color: #7c8ab0;
     background-color: #131722;
-    border: 1px solid #1f2330;
-    border-left: 3px solid #7c8ab0;
-    border-radius: 6px;
-    padding: 10px 14px;
+}
+
+QFrame#InfoPopover {
+    background-color: #141823;
+    border: 1px solid #262b39;
+    border-radius: 8px;
+}
+QFrame#InfoPopover QLabel { color: #dce0ea; font-size: 9.5pt; }
+QFrame#InfoPopover QLabel#InfoPopoverTitle {
+    color: #98a8c8; font-weight: 600; font-size: 9pt;
+    text-transform: uppercase; letter-spacing: 0.8px;
 }
 
 /* ============ Cards ============ */
@@ -119,20 +135,20 @@ QLabel#CardTitle {
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
-    padding: 16px 18px 0 18px;
+    padding: 14px 16px 0 16px;
 }
 
 QLabel#CardValue {
-    font-size: 20pt;
+    font-size: 19pt;
     font-weight: 600;
     color: #ffffff;
-    padding: 4px 18px 2px 18px;
+    padding: 4px 16px 2px 16px;
 }
 
 QLabel#CardCaption {
     font-size: 9pt;
     color: #8a93a6;
-    padding: 0 18px 14px 18px;
+    padding: 0 16px 12px 16px;
 }
 
 /* ============ Buttons ============ */
@@ -182,6 +198,18 @@ QPushButton#HintBadge:hover {
     border-color: #7c8ab0;
 }
 
+QPushButton#SectionToggle {
+    background: transparent;
+    color: #b4bbcc;
+    border: none;
+    text-align: left;
+    padding: 6px 4px;
+    font-weight: 600;
+    font-size: 9pt;
+    letter-spacing: 0.4px;
+}
+QPushButton#SectionToggle:hover { color: #ffffff; }
+
 /* ============ Inputs ============ */
 
 QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
@@ -206,10 +234,17 @@ QComboBox QAbstractItemView {
     padding: 2px;
 }
 
+QSpinBox::up-button, QSpinBox::down-button,
+QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+    background: #1a1f2b; border: none; width: 14px;
+}
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow { width: 7px; height: 7px; }
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow { width: 7px; height: 7px; }
+
 /* ============ Tables ============ */
 
 QTableView, QTableWidget {
-    background-color: #11141c;
+    background-color: #0f1219;
     gridline-color: #1f2330;
     color: #dce0ea;
     border: 1px solid #1f2330;
@@ -217,27 +252,51 @@ QTableView, QTableWidget {
     selection-background-color: #2a3450;
     selection-color: #ffffff;
     alternate-background-color: #131722;
+    outline: 0;
 }
 
+QTableView::item {
+    padding: 4px 8px;
+    border: 0;
+}
+QTableView::item:selected { background-color: #2a3450; color: #ffffff; }
+
+QHeaderView { background-color: #141823; border: 0; }
 QHeaderView::section {
     background-color: #141823;
     color: #8a93a6;
-    padding: 6px 10px;
+    padding: 7px 10px;
     border: 0;
     border-right: 1px solid #1f2330;
     border-bottom: 1px solid #1f2330;
     font-weight: 600;
     font-size: 9pt;
 }
+QHeaderView::section:vertical {
+    border-right: 1px solid #1f2330;
+}
+
+QTableCornerButton::section {
+    background-color: #141823;
+    border: 0;
+    border-right: 1px solid #1f2330;
+    border-bottom: 1px solid #1f2330;
+}
 
 /* ============ Scrollbars ============ */
 
 QScrollBar:vertical, QScrollBar:horizontal {
-    background: #0e1117; border: none; margin: 0; width: 10px; height: 10px;
+    background: transparent; border: none; margin: 0; width: 10px; height: 10px;
 }
-QScrollBar::handle { background: #262b39; border-radius: 5px; min-height: 24px; min-width: 24px; }
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #262b39; border-radius: 5px; min-height: 24px; min-width: 24px;
+}
 QScrollBar::handle:hover { background: #3a4257; }
-QScrollBar::add-line, QScrollBar::sub-line { background: transparent; border: none; height: 0; width: 0; }
+QScrollBar::add-line, QScrollBar::sub-line {
+    background: transparent; border: none; height: 0; width: 0;
+}
+QScrollBar::add-page, QScrollBar::sub-page { background: transparent; }
+QAbstractScrollArea::corner { background: #0f1219; border: 0; }
 
 /* ============ Tabs ============ */
 
@@ -247,9 +306,7 @@ QTabWidget::pane {
     top: -1px;
     background: #11141c;
 }
-QTabBar {
-    qproperty-drawBase: 0;
-}
+QTabBar { qproperty-drawBase: 0; }
 QTabBar::tab {
     background: transparent;
     color: #8a93a6;
@@ -269,6 +326,38 @@ QTabBar::tab:selected {
     border-bottom: 1px solid #141823;
 }
 QTabBar::tab:disabled { color: #4a526a; }
+
+/* ============ Dock widgets ============ */
+
+QDockWidget {
+    color: #dce0ea;
+    titlebar-close-icon: url(none);
+    titlebar-normal-icon: url(none);
+}
+
+QDockWidget::title {
+    background: #0d1018;
+    padding: 8px 14px;
+    border-bottom: 1px solid #1b1f2a;
+    color: #98a8c8;
+    font-size: 8.5pt;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+QDockWidget > QWidget { background: #0e1117; }
+
+QDockWidget::close-button, QDockWidget::float-button {
+    background: transparent;
+    border: 0;
+    icon-size: 12px;
+    padding: 2px;
+}
+QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+    background: #1a1f2b;
+    border-radius: 3px;
+}
 
 /* ============ Status & tooltips ============ */
 
@@ -294,17 +383,17 @@ QGroupBox {
     border: 1px solid #1f2330;
     border-radius: 8px;
     margin-top: 14px;
-    padding: 14px 12px 12px 12px;
+    padding: 12px 12px 10px 12px;
     color: #b4bbcc;
     font-weight: 500;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
-    left: 14px;
+    left: 12px;
     padding: 0 8px;
     color: #8a93a6;
-    font-size: 9pt;
-    letter-spacing: 0.4px;
+    font-size: 8.5pt;
+    letter-spacing: 0.6px;
     text-transform: uppercase;
 }
 
@@ -332,5 +421,16 @@ QProgressBar::chunk { background-color: #7c8ab0; border-radius: 6px; }
 /* ============ Splitters ============ */
 
 QSplitter::handle { background: #1b1f2a; }
-QSplitter::handle:horizontal { width: 4px; }
-QSplitter::handle:vertical { height: 4px; }
+QSplitter::handle:hover { background: #2a3450; }
+QSplitter::handle:horizontal { width: 5px; }
+QSplitter::handle:vertical { height: 5px; }
+
+/* ============ Result summary (inline interpretation) ============ */
+
+QLabel#ResultSummary {
+    color: #b4bbcc;
+    padding: 8px 12px;
+    background-color: #131722;
+    border: 1px solid #1f2330;
+    border-radius: 6px;
+}

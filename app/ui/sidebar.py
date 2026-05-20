@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -16,6 +16,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from app.ui.widgets import RailIndicator
 
 ICONS_DIR = Path(__file__).resolve().parent.parent / "resources" / "icons"
 
@@ -53,9 +55,16 @@ class _NavRow(QWidget):
         self.button.clicked.connect(lambda _checked=False: self.clicked.emit(item.key))
         lay.addWidget(self.button, 1)
 
-        self.lock = QLabel("\U0001F512")
+        self.lock = QLabel()
         self.lock.setObjectName("NavLock")
-        self.lock.setStyleSheet("color: #4a526a; padding-right: 18px;")
+        self.lock.setStyleSheet("padding-right: 18px;")
+        lock_path = ICONS_DIR / "lock.svg"
+        if lock_path.exists():
+            pm = QPixmap(str(lock_path))
+            if not pm.isNull():
+                self.lock.setPixmap(
+                    pm.scaled(14, 14, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                )
         self.lock.hide()
         lay.addWidget(self.lock)
 
@@ -118,10 +127,14 @@ class Sidebar(QFrame):
         footer.setAlignment(Qt.AlignLeft)
         layout.addWidget(footer)
 
+        self._rail = RailIndicator(self)
+        self._rail.raise_()
+
     def select(self, key: str) -> None:
         row = self._rows.get(key)
         if row is not None and row.button.isEnabled():
             row.button.setChecked(True)
+            self._rail.move_to(row)
 
     def set_availability(self, available: dict[str, bool]) -> None:
         """Включает/выключает пункты по словарю флагов доступности."""

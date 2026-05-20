@@ -31,9 +31,6 @@ def plot_binary_matrix(
     ax.grid(False)
     for spine in ax.spines.values():
         spine.set_color(PALETTE.border)
-    fig.tight_layout()
-
-
 def plot_similarity_matrix(
     fig: Figure,
     sim: np.ndarray,
@@ -66,4 +63,3 @@ def plot_similarity_matrix(
                     fontsize=7,
                 )
     ax.grid(False)
-    fig.tight_layout()

@@ -52,5 +52,13 @@ def apply_dark_style() -> None:
             "legend.labelcolor": PALETTE.text,
             "font.family": ["IBM Plex Sans", "Inter", "Segoe UI", "DejaVu Sans"],
             "font.size": 9,
+            "figure.constrained_layout.use": True,
+            "figure.constrained_layout.h_pad": 0.06,
+            "figure.constrained_layout.w_pad": 0.06,
+            "figure.constrained_layout.hspace": 0.04,
+            "figure.constrained_layout.wspace": 0.04,
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+            "axes.linewidth": 0.8,
         }
     )

@@ -7,32 +7,28 @@ from app.modules.core.optimization import OptimizationResult
 from app.modules.visualization.canvas import MplCanvas
 from app.modules.visualization.charts import plot_richness
 from app.modules.visualization.heatmaps import plot_binary_matrix
-from app.ui.widgets import InfoNote, Placeholder, ResultSummary, StatCard
+from app.ui.widgets import Placeholder, ResultSummary, StatCard
 
 from .base import BasePage
 
 
 class DashboardPage(BasePage):
     title = "Дашборд"
-    subtitle = (
-        "Сводка по текущему набору объектов и характеристик: состояние данных, "
-        "базовые показатели и итог последней оптимизации."
+    subtitle = "Сводка по текущему набору данных и итог последней оптимизации."
+    info_title = "О разделе"
+    info_body = (
+        "На этом экране — <b>состояние работы</b>: размер матрицы, плотность, "
+        "был ли уже расчёт. Используйте его как «домашний экран»: видно, чего не хватает "
+        "и куда двигаться дальше."
     )
 
     def build(self) -> None:
-        intro = InfoNote(
-            "Эта страница показывает <b>текущий контекст работы</b>: сколько объектов "
-            "и признаков загружено, насколько плотна матрица и был ли уже выполнен расчёт. "
-            "Дальнейшие шаги — слева в навигации, разделы становятся активными по мере появления данных."
-        )
-        self._root.addWidget(intro)
-
         cards_row = QHBoxLayout()
-        cards_row.setSpacing(14)
+        cards_row.setSpacing(12)
         self.card_objects = StatCard("Объекты", "—", "строки бинарной матрицы")
         self.card_features = StatCard("Характеристики", "—", "столбцы бинарной матрицы")
         self.card_density = StatCard("Плотность", "—", "доля единиц во всей матрице")
-        self.card_optimized = StatCard("Оптимизация", "не выполнялась", "перейдите в раздел «Оптимизация»")
+        self.card_optimized = StatCard("Оптимизация", "не выполнялась", "перейдите в «Оптимизацию»")
         for c in (self.card_objects, self.card_features, self.card_density, self.card_optimized):
             cards_row.addWidget(c, 1)
         self._root.addLayout(cards_row)
@@ -43,17 +39,17 @@ class DashboardPage(BasePage):
         self._root.addWidget(self._next_step)
 
         body = QGridLayout()
-        body.setSpacing(14)
+        body.setSpacing(12)
 
         self._matrix_canvas = MplCanvas(width=6.5, height=4.5)
         self._richness_canvas = MplCanvas(width=6.5, height=4.5)
-        self._matrix_canvas.setMinimumHeight(360)
-        self._richness_canvas.setMinimumHeight(360)
+        self._matrix_canvas.setMinimumHeight(320)
+        self._richness_canvas.setMinimumHeight(320)
 
         self._placeholder = Placeholder(
             "Данные ещё не загружены",
             "Перейдите в раздел «Матрица объектов» и загрузите CSV / XLSX "
-            "либо нажмите «Сгенерировать случайный набор», чтобы попробовать на демо.",
+            "либо нажмите «Сгенерировать случайный набор».",
         )
 
         body.addWidget(self._placeholder, 0, 0, 1, 2)
@@ -102,8 +98,7 @@ class DashboardPage(BasePage):
         if self.state.optimization is None:
             self._next_step.setText(
                 f"Данные загружены ({matrix.n_objects} × {matrix.n_features}). "
-                "Дальше — посмотрите попарные сходства в «Анализе» "
-                "или сразу запустите расчёт в «Оптимизации»."
+                "Дальше — попарные сходства в «Анализе» или сразу расчёт в «Оптимизации»."
             )
 
     def _on_optimization(self, opt: OptimizationResult | None) -> None:
@@ -126,6 +121,5 @@ class DashboardPage(BasePage):
             self._next_step.setText(
                 f"Оптимизация выполнена: <b>сохранено {kept}</b> из {total} признаков "
                 f"(исключено {removed}, это {share:.0%}). "
-                "Можно перейти в «Визуализацию», чтобы сравнить структуру до и после, "
-                "или вернуться к «Матрице объектов» и применить сокращённый состав."
+                "Можно перейти в «Визуализацию» или применить сокращённый состав к матрице."
             )

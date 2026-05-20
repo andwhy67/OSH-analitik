@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
+from .animations import CountUp
+
 
 class StatCard(QFrame):
     """Карточка KPI на дашборде."""
@@ -30,8 +32,10 @@ class StatCard(QFrame):
         layout.addWidget(self._caption)
         layout.addStretch(1)
 
+        self._counter = CountUp(self._value, duration_ms=320)
+
     def set_value(self, value: str) -> None:
-        self._value.setText(value)
+        self._counter.animate_to(value)
 
     def set_caption(self, caption: str) -> None:
         self._caption.setText(caption)

@@ -31,9 +31,9 @@ from app.ui.state import ExpertSession
 from app.ui.widgets import (
     DataFrameTable,
     HintBadge,
-    InfoNote,
     Placeholder,
     ResultSummary,
+    SectionTitle,
 )
 
 from .base import BasePage
@@ -51,66 +51,24 @@ def _w_interpretation(w: float) -> str:
 
 class ExpertPage(BasePage):
     title = "Экспертный анализ"
-    subtitle = (
-        "Агрегация ранжирований экспертов: матрица консенсуса, медиана Кемени, "
-        "коэффициент конкордации Кендалла, кластеризация экспертов."
+    subtitle = "Агрегация ранжирований экспертов: консенсус, медиана Кемени, кластеры."
+    info_title = "Что нужно загрузить"
+    info_body = (
+        "Каждая <b>строка</b> файла — один эксперт, столбцы — объекты, значения — ранги "
+        "(1 — самый приоритетный). Раздел показывает, насколько эксперты согласны и какое "
+        "усреднённое ранжирование лучше всего описывает их совокупное мнение."
     )
 
     def build(self) -> None:
-        intro = InfoNote(
-            "Каждая строка файла — это один <b>эксперт</b>, столбцы — <b>объекты</b>, "
-            "а значения — присвоенные ранги (1 — самый приоритетный). "
-            "Раздел показывает, насколько эксперты согласны между собой и какое усреднённое ранжирование "
-            "лучше всего описывает их совокупное мнение."
-        )
-        self._root.addWidget(intro)
-
-        controls = QGroupBox("Данные экспертов")
-        layout = QHBoxLayout(controls)
-        layout.setSpacing(10)
-
-        self._btn_load = QPushButton("Загрузить ранжирования…")
-        self._btn_load.setObjectName("Primary")
-        self._btn_load.clicked.connect(self._on_load)
-
-        self._btn_open_sample = QPushButton("Открыть пример")
-        self._btn_open_sample.setToolTip("samples/experts_rankings.csv")
-        self._btn_open_sample.clicked.connect(self._on_open_sample)
-
-        self._btn_sample = QPushButton("Случайный пример")
-        self._btn_sample.clicked.connect(self._on_sample)
-
-        self._sp_clusters = QSpinBox()
-        self._sp_clusters.setRange(1, 12)
-        self._sp_clusters.setValue(2)
-        self._sp_clusters.valueChanged.connect(self._refresh)
-
-        self._btn_calc = QPushButton("Пересчитать")
-        self._btn_calc.clicked.connect(self._refresh)
-
-        clusters_hint = HintBadge(
-            "На сколько групп разбить экспертов по близости их ранжирований. "
-            "Помогает увидеть, расходятся ли эксперты на несколько лагерей."
-        )
-
-        layout.addWidget(self._btn_load)
-        layout.addWidget(self._btn_open_sample)
-        layout.addWidget(self._btn_sample)
-        layout.addStretch(1)
-        layout.addWidget(QLabel("Кластеров экспертов:"))
-        layout.addWidget(clusters_hint)
-        layout.addWidget(self._sp_clusters)
-        layout.addWidget(self._btn_calc)
-
-        self._root.addWidget(controls)
+        self._build_parameters()
 
         self._summary = ResultSummary(
-            "Загрузите файл с ранжированиями экспертов (строки — эксперты, столбцы — объекты, "
-            "значения — ранги)."
+            "Загрузите файл с ранжированиями экспертов справа."
         )
         self._root.addWidget(self._summary)
 
         self._tabs = QTabWidget()
+        self._tabs.setDocumentMode(True)
         self._root.addWidget(self._tabs, 1)
 
         self._table_data = DataFrameTable()
@@ -121,27 +79,29 @@ class ExpertPage(BasePage):
         cons_split = QSplitter(Qt.Horizontal)
         cons_split.addWidget(self._canvas_cons)
         cons_split.addWidget(self._table_cons)
-        cons_split.setSizes([520, 380])
+        cons_split.setSizes([600, 360])
+        cons_split.setChildrenCollapsible(False)
         self._tabs.addTab(cons_split, "Матрица консенсуса")
 
         self._table_median = DataFrameTable()
         self._lbl_w = QLabel("—")
-        self._lbl_w.setStyleSheet("color: #b4bbcc; padding: 8px; font-size: 10pt;")
+        self._lbl_w.setStyleSheet("color: #b4bbcc; padding: 8px;")
         self._lbl_w.setWordWrap(True)
+        self._lbl_w.setTextFormat(Qt.RichText)
         med_w = QWidget()
         med_l = QVBoxLayout(med_w)
+        med_l.setContentsMargins(0, 0, 0, 0)
         med_l.addWidget(self._lbl_w)
         med_l.addWidget(self._table_median)
         self._tabs.addTab(med_w, "Медиана Кемени")
 
         self._canvas_dendro = MplCanvas(width=6.0, height=5.0)
         self._canvas_scatter = MplCanvas(width=6.0, height=5.0)
-        clus_w = QWidget()
-        clus_l = QHBoxLayout(clus_w)
-        clus_l.setContentsMargins(0, 0, 0, 0)
-        clus_l.addWidget(self._canvas_dendro)
-        clus_l.addWidget(self._canvas_scatter)
-        self._tabs.addTab(clus_w, "Кластеризация экспертов")
+        clus_split = QSplitter(Qt.Horizontal)
+        clus_split.addWidget(self._canvas_dendro)
+        clus_split.addWidget(self._canvas_scatter)
+        clus_split.setSizes([480, 480])
+        self._tabs.addTab(clus_split, "Кластеризация экспертов")
 
         self._placeholder = Placeholder(
             "Экспертные данные не загружены",
@@ -152,11 +112,60 @@ class ExpertPage(BasePage):
 
         self.state.experts_changed.connect(self._on_experts)
 
+    def _build_parameters(self) -> None:
+        panel = QWidget()
+        lay = QVBoxLayout(panel)
+        lay.setContentsMargins(12, 6, 12, 12)
+        lay.setSpacing(10)
+
+        lay.addWidget(SectionTitle("Источник"))
+
+        self._btn_load = QPushButton("Загрузить ранжирования…")
+        self._btn_load.setObjectName("Primary")
+        self._btn_load.clicked.connect(self._on_load)
+        lay.addWidget(self._btn_load)
+
+        self._btn_open_sample = QPushButton("Открыть пример")
+        self._btn_open_sample.setToolTip("samples/experts_rankings.csv")
+        self._btn_open_sample.clicked.connect(self._on_open_sample)
+        lay.addWidget(self._btn_open_sample)
+
+        self._btn_sample = QPushButton("Случайный пример")
+        self._btn_sample.clicked.connect(self._on_sample)
+        lay.addWidget(self._btn_sample)
+
+        lay.addSpacing(6)
+        lay.addWidget(SectionTitle("Кластеризация"))
+
+        row = QHBoxLayout()
+        row.setSpacing(6)
+        row.addWidget(QLabel("Кластеров:"))
+        row.addWidget(HintBadge(
+            "На сколько групп разбить экспертов по близости их ранжирований. "
+            "Помогает увидеть «лагеря» во мнениях."
+        ))
+        row.addStretch(1)
+        lay.addLayout(row)
+
+        self._sp_clusters = QSpinBox()
+        self._sp_clusters.setRange(1, 12)
+        self._sp_clusters.setValue(2)
+        self._sp_clusters.valueChanged.connect(self._refresh)
+        lay.addWidget(self._sp_clusters)
+
+        lay.addSpacing(8)
+        self._btn_calc = QPushButton("Пересчитать")
+        self._btn_calc.clicked.connect(self._refresh)
+        lay.addWidget(self._btn_calc)
+
+        lay.addStretch(1)
+        self._params = panel
+
     @staticmethod
     def _wrap(title: str, widget: QWidget) -> QWidget:
         box = QGroupBox(title)
         lay = QVBoxLayout(box)
-        lay.setContentsMargins(10, 18, 10, 10)
+        lay.setContentsMargins(10, 16, 10, 10)
         lay.addWidget(widget)
         return box
 
@@ -181,11 +190,7 @@ class ExpertPage(BasePage):
     def _on_open_sample(self) -> None:
         path = sample_file("experts_rankings.csv")
         if path is None:
-            QMessageBox.warning(
-                self,
-                "Пример не найден",
-                "Файл samples/experts_rankings.csv не найден.",
-            )
+            QMessageBox.warning(self, "Пример не найден", "Файл samples/experts_rankings.csv не найден.")
             return
         try:
             df = pd.read_csv(path, index_col=0, engine="python")
@@ -253,10 +258,9 @@ class ExpertPage(BasePage):
         self._lbl_w.setText(
             f"<b>Коэффициент конкордации Кендалла W = {w:.3f}</b> &nbsp; "
             f"({_w_interpretation(w)}; 0 — полный разнобой, 1 — полное согласие)."
-            "<br>В таблице ниже — усреднённое ранжирование объектов (медиана Кемени), "
-            "минимизирующее суммарное расстояние до всех экспертов."
+            "<br>В таблице ниже — медиана Кемени: ранжирование, минимизирующее "
+            "суммарное расстояние до всех экспертов."
         )
-        self._lbl_w.setTextFormat(Qt.RichText)
 
         n_clusters = min(self._sp_clusters.value(), df.shape[0])
         clusters = cluster_experts(df, n_clusters=n_clusters)
@@ -269,5 +273,5 @@ class ExpertPage(BasePage):
         self._summary.setText(
             f"Экспертов: <b>{df.shape[0]}</b>, объектов: <b>{df.shape[1]}</b>. "
             f"Согласованность W = <b>{w:.3f}</b> ({_w_interpretation(w)}). "
-            f"Текущий лидер по медиане Кемени: <b>{leader}</b>. "
+            f"Лидер по медиане Кемени: <b>{leader}</b>."
         )

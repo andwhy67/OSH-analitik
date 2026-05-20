@@ -1,15 +1,20 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QPushButton,
     QSizePolicy,
+    QToolButton,
     QVBoxLayout,
     QWidget,
+    QWidgetAction,
 )
+
+from .animations import Fader
 
 
 class HintBadge(QPushButton):
@@ -44,20 +49,50 @@ class LabeledField(QWidget):
         self.field = field
 
 
-class InfoNote(QFrame):
-    """Карточка-заметка с пояснением «о чём эта страница / что делать»."""
-
-    def __init__(self, text: str, parent=None):
+class _PopoverFrame(QFrame):
+    def __init__(self, title: str, body: str, parent=None):
         super().__init__(parent)
-        self.setObjectName("InfoNote")
+        self.setObjectName("InfoPopover")
         lay = QVBoxLayout(self)
-        lay.setContentsMargins(12, 10, 12, 10)
-        lay.setSpacing(2)
-        lbl = QLabel(text)
-        lbl.setWordWrap(True)
-        lbl.setTextFormat(Qt.RichText)
-        lbl.setObjectName("InfoNoteText")
-        lay.addWidget(lbl)
+        lay.setContentsMargins(14, 12, 14, 12)
+        lay.setSpacing(6)
+        if title:
+            t = QLabel(title)
+            t.setObjectName("InfoPopoverTitle")
+            lay.addWidget(t)
+        b = QLabel(body)
+        b.setWordWrap(True)
+        b.setTextFormat(Qt.RichText)
+        b.setMinimumWidth(360)
+        b.setMaximumWidth(420)
+        lay.addWidget(b)
+
+
+class InfoButton(QToolButton):
+    """Маленькая «i»-кнопка, открывающая поповер с пояснением."""
+
+    def __init__(self, title: str, body: str, parent=None):
+        super().__init__(parent)
+        self.setObjectName("InfoButton")
+        self.setText("i")
+        self.setCursor(Qt.PointingHandCursor)
+        self.setFocusPolicy(Qt.NoFocus)
+        self.setToolTip("Показать описание раздела")
+        self._title = title
+        self._body = body
+        self.clicked.connect(self._show_popover)
+
+    def update_content(self, title: str, body: str) -> None:
+        self._title, self._body = title, body
+
+    def _show_popover(self) -> None:
+        menu = QMenu(self)
+        menu.setAttribute(Qt.WA_TranslucentBackground)
+        act = QWidgetAction(menu)
+        act.setDefaultWidget(_PopoverFrame(self._title, self._body))
+        menu.addAction(act)
+        pos = self.mapToGlobal(QPoint(0, self.height() + 4))
+        menu.exec(pos)
 
 
 class ResultSummary(QLabel):
@@ -68,10 +103,19 @@ class ResultSummary(QLabel):
         self.setObjectName("ResultSummary")
         self.setWordWrap(True)
         self.setTextFormat(Qt.RichText)
-        self.setStyleSheet(
-            "QLabel#ResultSummary {"
-            "color: #b4bbcc; padding: 8px 10px;"
-            "background-color: #131722; border: 1px solid #1f2330;"
-            "border-radius: 6px;"
-            "}"
-        )
+        self._fader = Fader(self)
+
+    def setText(self, text: str) -> None:  # type: ignore[override]
+        if text == self.text():
+            super().setText(text)
+            return
+        super().setText(text)
+        self._fader.fade_in(duration_ms=120, start=0.0)
+
+
+class SectionTitle(QLabel):
+    """Маленький заголовок секции в доке/боковой колонке."""
+
+    def __init__(self, text: str, parent=None):
+        super().__init__(text, parent)
+        self.setObjectName("SectionHeader")

@@ -31,9 +31,9 @@ from app.modules.visualization.heatmaps import plot_similarity_matrix
 from app.ui.widgets import (
     DataFrameTable,
     HintBadge,
-    InfoNote,
     Placeholder,
     ResultSummary,
+    SectionTitle,
 )
 
 from .base import BasePage
@@ -46,50 +46,31 @@ _SIMILARITIES = {
 }
 
 _METRIC_HINTS = {
-    "Жаккар": "J(A,B) = |A∩B| / |A∪B|. Симметрично, нечувствительно к совпадениям нулей.",
-    "Сёренсен-Дайс": "Dice = 2·|A∩B| / (|A|+|B|). Похоже на Жаккара, но выше для пересекающихся наборов.",
-    "Косинусная": "Угловое сходство бинарных векторов. Симметрично, учитывает только единицы.",
-    "Включение (асимметрично)": "P(A⊂B) = |A∩B| / |A|. Показывает, насколько объект A «включён» в B.",
+    "Жаккар": "J(A,B) = |A∩B| / |A∪B|. Симметрично, не учитывает совпадение нулей.",
+    "Сёренсен-Дайс": "Dice = 2·|A∩B| / (|A|+|B|). Похоже на Жаккара, выше для пересекающихся наборов.",
+    "Косинусная": "Угловое сходство бинарных векторов; учитывает только единицы.",
+    "Включение (асимметрично)": "P(A⊂B) = |A∩B| / |A|. Показывает, насколько A вложен в B.",
 }
 
 
 class AnalysisPage(BasePage):
     title = "Анализ сходства и ранжирование"
-    subtitle = (
-        "Попарные коэффициенты сходства, ранжирование объектов по богатству и доминированию, "
-        "поиск недостающих характеристик."
+    subtitle = "Попарные сходства, ранжирование объектов и недостающие характеристики."
+    info_title = "Зачем этот раздел"
+    info_body = (
+        "Помогает <b>понять структуру набора до оптимизации</b>: где «двойники», "
+        "кто лидер по богатству, какие признаки системно отсутствуют. "
+        "Выберите меру сходства справа и нажмите «Пересчитать»."
     )
 
     def build(self) -> None:
-        intro = InfoNote(
-            "Раздел нужен, чтобы <b>понять структуру набора до оптимизации</b>: "
-            "какие объекты похожи друг на друга, кто является «лидером» по составу признаков, "
-            "и каких признаков системно не хватает. Выберите меру и нажмите «Пересчитать»."
-        )
-        self._root.addWidget(intro)
-
-        controls = QGroupBox("Параметры")
-        cl = QHBoxLayout(controls)
-        self._cmb_metric = QComboBox()
-        for name in _SIMILARITIES:
-            self._cmb_metric.addItem(name)
-        self._cmb_metric.setMinimumWidth(220)
-        self._cmb_metric.currentIndexChanged.connect(self._on_metric_changed)
-        self._metric_hint = HintBadge(_METRIC_HINTS["Жаккар"])
-        cl.addWidget(QLabel("Мера сходства:"))
-        cl.addWidget(self._metric_hint)
-        cl.addWidget(self._cmb_metric)
-        cl.addStretch(1)
-        self._btn_recalc = QPushButton("Пересчитать")
-        self._btn_recalc.setObjectName("Primary")
-        self._btn_recalc.clicked.connect(self._refresh)
-        cl.addWidget(self._btn_recalc)
-        self._root.addWidget(controls)
+        self._build_parameters()
 
         self._summary = ResultSummary("Выберите меру сходства и нажмите «Пересчитать».")
         self._root.addWidget(self._summary)
 
         self._tabs = QTabWidget()
+        self._tabs.setDocumentMode(True)
         self._root.addWidget(self._tabs, 1)
 
         self._canvas_sim = MplCanvas(width=6.5, height=5.5)
@@ -97,7 +78,8 @@ class AnalysisPage(BasePage):
         sim_tab = QSplitter(Qt.Horizontal)
         sim_tab.addWidget(self._canvas_sim)
         sim_tab.addWidget(self._table_sim)
-        sim_tab.setSizes([500, 400])
+        sim_tab.setSizes([600, 360])
+        sim_tab.setChildrenCollapsible(False)
         self._tabs.addTab(sim_tab, "Матрица сходства")
 
         self._table_rich = DataFrameTable()
@@ -106,7 +88,7 @@ class AnalysisPage(BasePage):
         rich_box = self._wrap(
             "По числу характеристик",
             self._table_rich,
-            "Сколько единиц у объекта. Чем больше — тем «богаче» он по составу.",
+            "Сколько единиц у объекта; чем больше — тем «богаче» по составу.",
         )
         dom_box = self._wrap(
             "По доминированию (включение)",
@@ -115,6 +97,7 @@ class AnalysisPage(BasePage):
         )
         rank_tab.addWidget(rich_box)
         rank_tab.addWidget(dom_box)
+        rank_tab.setChildrenCollapsible(False)
         self._tabs.addTab(rank_tab, "Ранжирование объектов")
 
         self._table_missing = DataFrameTable()
@@ -122,7 +105,7 @@ class AnalysisPage(BasePage):
             self._wrap(
                 "Кандидаты на добавление",
                 self._table_missing,
-                "Характеристики, отсутствующие у большой доли объектов — потенциально важные пропуски.",
+                "Характеристики, отсутствующие у большой доли объектов — потенциальные пропуски.",
             ),
             "Недостающие характеристики",
         )
@@ -133,19 +116,47 @@ class AnalysisPage(BasePage):
         )
         self._root.addWidget(self._placeholder)
         self._tabs.hide()
-        controls.setEnabled(False)
-        self._controls = controls
 
         self.state.matrix_changed.connect(self._on_matrix)
+
+    def _build_parameters(self) -> None:
+        panel = QWidget()
+        lay = QVBoxLayout(panel)
+        lay.setContentsMargins(12, 6, 12, 12)
+        lay.setSpacing(10)
+
+        lay.addWidget(SectionTitle("Параметры"))
+
+        row = QHBoxLayout()
+        row.setSpacing(6)
+        row.addWidget(QLabel("Мера сходства:"))
+        self._metric_hint = HintBadge(_METRIC_HINTS["Жаккар"])
+        row.addWidget(self._metric_hint)
+        row.addStretch(1)
+        lay.addLayout(row)
+
+        self._cmb_metric = QComboBox()
+        for name in _SIMILARITIES:
+            self._cmb_metric.addItem(name)
+        self._cmb_metric.currentIndexChanged.connect(self._on_metric_changed)
+        lay.addWidget(self._cmb_metric)
+
+        lay.addSpacing(8)
+        self._btn_recalc = QPushButton("Пересчитать")
+        self._btn_recalc.setObjectName("Primary")
+        self._btn_recalc.clicked.connect(self._refresh)
+        lay.addWidget(self._btn_recalc)
+
+        lay.addStretch(1)
+        self._params = panel
 
     @staticmethod
     def _wrap(title: str, widget: QWidget, hint: str = "") -> QWidget:
         box = QGroupBox(title)
         lay = QVBoxLayout(box)
-        lay.setContentsMargins(10, 18, 10, 10)
+        lay.setContentsMargins(10, 16, 10, 10)
         if hint:
             note = QLabel(hint)
-            note.setObjectName("PageNote")
             note.setWordWrap(True)
             note.setStyleSheet("color: #8a93a6; padding: 0 0 6px 0;")
             lay.addWidget(note)
@@ -161,11 +172,11 @@ class AnalysisPage(BasePage):
         if matrix is None:
             self._tabs.hide()
             self._placeholder.show()
-            self._controls.setEnabled(False)
+            self._params.setEnabled(False)
             return
         self._placeholder.hide()
         self._tabs.show()
-        self._controls.setEnabled(True)
+        self._params.setEnabled(True)
         self._refresh()
 
     def _refresh(self) -> None:
@@ -182,10 +193,8 @@ class AnalysisPage(BasePage):
         df_sim = pd.DataFrame(sim, index=matrix.objects, columns=matrix.objects)
         self._table_sim.set_dataframe(df_sim.round(4))
 
-        rich = rank_objects_by_richness(matrix)
-        dom = rank_objects_by_dominance(matrix).round(4)
-        self._table_rich.set_dataframe(rich)
-        self._table_dom.set_dataframe(dom)
+        self._table_rich.set_dataframe(rank_objects_by_richness(matrix))
+        self._table_dom.set_dataframe(rank_objects_by_dominance(matrix).round(4))
 
         missing = missing_characteristics(matrix, min_coverage=self.state.config.missing_coverage_threshold)
         self._table_missing.set_dataframe(missing.round(3))
@@ -198,8 +207,7 @@ class AnalysisPage(BasePage):
                 self._summary.setText(
                     f"Мера: <b>{metric_name}</b>. Среднее попарное сходство = <b>{avg_sim:.3f}</b>. "
                     f"Кандидатов на добавление: <b>{len(missing)}</b>. "
-                    "Высокое сходство означает, что многие объекты «дублируют» друг друга по составу — "
-                    "это хороший повод запустить оптимизацию."
+                    "Высокое сходство — повод запустить оптимизацию."
                 )
             else:
                 self._summary.setText("Объектов слишком мало для попарного сравнения.")

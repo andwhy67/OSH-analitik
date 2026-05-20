@@ -63,4 +63,3 @@ def plot_object_graph(
     nx.draw_networkx_labels(g, pos, ax=ax, font_color=PALETTE.text, font_size=9)
     ax.set_title(title)
     ax.set_axis_off()
-    fig.tight_layout()

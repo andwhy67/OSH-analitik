@@ -6,80 +6,38 @@ import pandas as pd
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QMessageBox,
     QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
 
 from app.modules.core.matrix import BinaryMatrix
 from app.modules.data.io import DataLoader, DataSaveOptions, LoadOptions, save_matrix
 from app.modules.data.samples import sample_file
-from app.ui.widgets import DataFrameTable, HintBadge, InfoNote, ResultSummary
+from app.ui.widgets import DataFrameTable, HintBadge, ResultSummary, SectionTitle
 
 from .base import BasePage
 
 
 class MatrixPage(BasePage):
     title = "Матрица объектов"
-    subtitle = (
-        "Бинарная матрица «объект × характеристика»: 1 — признак у объекта присутствует, "
-        "0 — отсутствует. Это вход для всех остальных расчётов."
+    subtitle = "Бинарная матрица «объект × характеристика» — вход для всех расчётов."
+    info_title = "Что такое бинарная матрица"
+    info_body = (
+        "Каждая <b>строка</b> — это объект (либо признак при обратной ориентации), "
+        "каждая <b>колонка</b> — характеристика. Значения только <b>0</b> и <b>1</b>: "
+        "признак присутствует или нет. Поддерживаются CSV и XLSX. Если в вашей таблице "
+        "строки и столбцы перепутаны — переключите «Ориентацию» в панели справа."
     )
 
     def build(self) -> None:
-        intro = InfoNote(
-            "Поддерживаются <b>CSV и XLSX</b>. В файле первая колонка — имена объектов "
-            "(либо имена характеристик, если выбрана соответствующая ориентация), "
-            "далее — столбцы со значениями <b>0/1</b>. Для пробы есть готовый пример и кнопка "
-            "случайной генерации."
-        )
-        self._root.addWidget(intro)
-
-        controls = QGroupBox("Источник данных")
-        controls_layout = QHBoxLayout(controls)
-        controls_layout.setSpacing(10)
-
-        self._orientation = QComboBox()
-        self._orientation.addItem("Объекты в строках", "objects_in_rows")
-        self._orientation.addItem("Характеристики в строках (объекты в столбцах)", "objects_in_columns")
-        self._orientation.setMinimumWidth(280)
-        orient_hint = HintBadge(
-            "Если в вашей таблице каждая строка — это объект, а столбцы — признаки, "
-            "оставьте первый вариант. Если наоборот (строка = признак, столбец = объект), "
-            "выберите второй — данные будут транспонированы при загрузке."
-        )
-
-        self._btn_load = QPushButton("Загрузить файл…")
-        self._btn_load.setObjectName("Primary")
-        self._btn_load.clicked.connect(self._on_load)
-
-        self._btn_open_sample = QPushButton("Открыть пример")
-        self._btn_open_sample.setToolTip("samples/laptops.csv — небольшая демонстрационная матрица")
-        self._btn_open_sample.clicked.connect(self._on_open_sample)
-
-        self._btn_sample = QPushButton("Сгенерировать случайный набор")
-        self._btn_sample.setToolTip("Создаёт детерминированный пример из 8 объектов и 11 признаков")
-        self._btn_sample.clicked.connect(self._on_sample)
-
-        self._btn_save = QPushButton("Сохранить…")
-        self._btn_save.clicked.connect(self._on_save)
-        self._btn_save.setEnabled(False)
-
-        controls_layout.addWidget(QLabel("Ориентация:"))
-        controls_layout.addWidget(orient_hint)
-        controls_layout.addWidget(self._orientation)
-        controls_layout.addStretch(1)
-        controls_layout.addWidget(self._btn_open_sample)
-        controls_layout.addWidget(self._btn_sample)
-        controls_layout.addWidget(self._btn_load)
-        controls_layout.addWidget(self._btn_save)
-
-        self._root.addWidget(controls)
+        self._build_parameters()
 
         self._summary = ResultSummary(
-            "Данные не загружены. Откройте файл, демонстрационный пример или сгенерируйте набор."
+            "Данные не загружены. Откройте файл, демонстрационный пример или сгенерируйте набор справа."
         )
         self._root.addWidget(self._summary)
 
@@ -87,6 +45,54 @@ class MatrixPage(BasePage):
         self._root.addWidget(self._table, 1)
 
         self.state.matrix_changed.connect(self._on_matrix_changed)
+
+    def _build_parameters(self) -> None:
+        panel = QWidget()
+        lay = QVBoxLayout(panel)
+        lay.setContentsMargins(12, 6, 12, 12)
+        lay.setSpacing(10)
+
+        lay.addWidget(SectionTitle("Источник данных"))
+
+        orient_row = QHBoxLayout()
+        orient_row.setSpacing(6)
+        orient_row.addWidget(QLabel("Ориентация:"))
+        orient_row.addWidget(HintBadge(
+            "Объекты в строках — стандартный вариант. "
+            "Если в файле наоборот (строка = признак), выберите второй пункт — "
+            "данные транспонируются при загрузке."
+        ))
+        lay.addLayout(orient_row)
+
+        self._orientation = QComboBox()
+        self._orientation.addItem("Объекты в строках", "objects_in_rows")
+        self._orientation.addItem("Характеристики в строках", "objects_in_columns")
+        lay.addWidget(self._orientation)
+
+        lay.addSpacing(6)
+        lay.addWidget(SectionTitle("Действия"))
+
+        self._btn_load = QPushButton("Загрузить файл…")
+        self._btn_load.setObjectName("Primary")
+        self._btn_load.clicked.connect(self._on_load)
+        lay.addWidget(self._btn_load)
+
+        self._btn_open_sample = QPushButton("Открыть пример (laptops.csv)")
+        self._btn_open_sample.clicked.connect(self._on_open_sample)
+        lay.addWidget(self._btn_open_sample)
+
+        self._btn_sample = QPushButton("Случайный демо-набор")
+        self._btn_sample.clicked.connect(self._on_sample)
+        lay.addWidget(self._btn_sample)
+
+        lay.addSpacing(6)
+        self._btn_save = QPushButton("Сохранить матрицу…")
+        self._btn_save.clicked.connect(self._on_save)
+        self._btn_save.setEnabled(False)
+        lay.addWidget(self._btn_save)
+
+        lay.addStretch(1)
+        self._params = panel
 
     def _on_load(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -110,12 +116,7 @@ class MatrixPage(BasePage):
     def _on_open_sample(self) -> None:
         path = sample_file("laptops.csv")
         if path is None:
-            QMessageBox.warning(
-                self,
-                "Пример не найден",
-                "Файл samples/laptops.csv не найден ни рядом с приложением, "
-                "ни в каталоге проекта.",
-            )
+            QMessageBox.warning(self, "Пример не найден", "Файл samples/laptops.csv не найден.")
             return
         try:
             matrix = DataLoader(LoadOptions(orientation="objects_in_rows")).load(path)
@@ -160,7 +161,7 @@ class MatrixPage(BasePage):
     def _on_matrix_changed(self, matrix: BinaryMatrix | None) -> None:
         if matrix is None:
             self._summary.setText(
-                "Данные не загружены. Откройте файл, демонстрационный пример или сгенерируйте набор."
+                "Данные не загружены. Откройте файл, демонстрационный пример или сгенерируйте набор справа."
             )
             self._table.set_dataframe(pd.DataFrame())
             self._btn_save.setEnabled(False)
@@ -169,7 +170,7 @@ class MatrixPage(BasePage):
         self._summary.setText(
             f"Загружено: <b>{matrix.n_objects}</b> объектов · "
             f"<b>{matrix.n_features}</b> характеристик · плотность <b>{density:.1%}</b>. "
-            "Дальше — переход в «Анализ» или «Оптимизацию»."
+            "Дальше — «Анализ» или «Оптимизация»."
         )
         self._table.set_dataframe(matrix.to_dataframe())
         self._btn_save.setEnabled(True)

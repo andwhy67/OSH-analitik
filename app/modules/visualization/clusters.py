@@ -48,9 +48,6 @@ def plot_dendrogram(
     ax.set_title(title)
     ax.tick_params(axis="x", rotation=45)
     ax.set_ylabel("расстояние")
-    fig.tight_layout()
-
-
 def plot_cluster_scatter(
     fig: Figure,
     cluster: ClusterResult,
@@ -80,4 +77,3 @@ def plot_cluster_scatter(
         )
     ax.set_title(title)
     ax.grid(linestyle="--", alpha=0.3)
-    fig.tight_layout()

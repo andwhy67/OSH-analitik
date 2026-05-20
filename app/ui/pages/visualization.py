@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDoubleSpinBox,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QSpinBox,
+    QSplitter,
     QTabWidget,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -18,93 +20,50 @@ from app.modules.visualization.canvas import MplCanvas
 from app.modules.visualization.clusters import plot_cluster_scatter, plot_dendrogram
 from app.modules.visualization.graphs import plot_object_graph
 from app.modules.visualization.heatmaps import plot_binary_matrix, plot_similarity_matrix
-from app.ui.widgets import HintBadge, InfoNote, Placeholder, ResultSummary
+from app.ui.widgets import HintBadge, Placeholder, ResultSummary, SectionTitle
 
 from .base import BasePage
 
 
 class VisualizationPage(BasePage):
     title = "Визуализация"
-    subtitle = (
-        "Сводный визуальный разрез: тепловые карты, граф связей, "
-        "иерархическая кластеризация и MDS-проекция объектов."
+    subtitle = "Тепловые карты, граф связей, дендрограмма и MDS-проекция объектов."
+    info_title = "О разделе"
+    info_body = (
+        "Раздел <b>не выполняет новых расчётов</b>. Он показывает структуру набора под "
+        "разными углами: где скопления, где изоляты, где видна неоднородность. "
+        "Подкручивайте порог и число кластеров в правой панели."
     )
 
     def build(self) -> None:
-        intro = InfoNote(
-            "Раздел не выполняет новых расчётов — он показывает структуру набора "
-            "<b>под разными углами</b>: где скопления, где изолированные объекты, "
-            "где видна неоднородность. Удобен как для презентации результата, так и для "
-            "быстрой проверки гипотез."
-        )
-        self._root.addWidget(intro)
-
-        controls = QGroupBox("Параметры визуализации")
-        cl = QHBoxLayout(controls)
-
-        self._sp_threshold = QDoubleSpinBox()
-        self._sp_threshold.setRange(0.0, 1.0)
-        self._sp_threshold.setSingleStep(0.05)
-        self._sp_threshold.setDecimals(2)
-        self._sp_threshold.setValue(0.4)
-        self._sp_threshold.valueChanged.connect(self._refresh)
-        thr_hint = HintBadge(
-            "Только пары объектов со сходством Жаккара ≥ порога соединяются ребром в графе. "
-            "Выше порог — реже связи."
-        )
-
-        self._sp_clusters = QSpinBox()
-        self._sp_clusters.setRange(1, 20)
-        self._sp_clusters.setValue(3)
-        self._sp_clusters.valueChanged.connect(self._refresh)
-        cl_hint = HintBadge(
-            "На сколько групп разбить объекты в дендрограмме и MDS-проекции."
-        )
-
-        cl.addWidget(QLabel("Порог связи в графе:"))
-        cl.addWidget(thr_hint)
-        cl.addWidget(self._sp_threshold)
-        cl.addSpacing(16)
-        cl.addWidget(QLabel("Кластеров объектов:"))
-        cl.addWidget(cl_hint)
-        cl.addWidget(self._sp_clusters)
-        cl.addStretch(1)
-
-        self._btn = QPushButton("Обновить")
-        self._btn.setObjectName("Primary")
-        self._btn.clicked.connect(self._refresh)
-        cl.addWidget(self._btn)
-
-        self._root.addWidget(controls)
-        self._controls = controls
+        self._build_parameters()
 
         self._summary = ResultSummary("")
         self._summary.hide()
         self._root.addWidget(self._summary)
 
         self._tabs = QTabWidget()
+        self._tabs.setDocumentMode(True)
         self._root.addWidget(self._tabs, 1)
 
         self._canvas_heat = MplCanvas(width=6.0, height=5.0)
         self._canvas_sim = MplCanvas(width=6.0, height=5.0)
-        heat_w = QWidget()
-        heat_l = QHBoxLayout(heat_w)
-        heat_l.setContentsMargins(0, 0, 0, 0)
-        heat_l.addWidget(self._canvas_heat)
-        heat_l.addWidget(self._canvas_sim)
-        self._tabs.addTab(heat_w, "Тепловые карты")
+        heat_split = QSplitter(Qt.Horizontal)
+        heat_split.addWidget(self._canvas_heat)
+        heat_split.addWidget(self._canvas_sim)
+        heat_split.setSizes([520, 520])
+        self._tabs.addTab(heat_split, "Тепловые карты")
 
         self._canvas_graph = MplCanvas(width=7.0, height=6.0)
         self._tabs.addTab(self._canvas_graph, "Граф связей объектов")
 
         self._canvas_dendro = MplCanvas(width=6.0, height=5.0)
         self._canvas_scatter = MplCanvas(width=6.0, height=5.0)
-        cl_w = QWidget()
-        cl_l = QHBoxLayout(cl_w)
-        cl_l.setContentsMargins(0, 0, 0, 0)
-        cl_l.addWidget(self._canvas_dendro)
-        cl_l.addWidget(self._canvas_scatter)
-        self._tabs.addTab(cl_w, "Кластеризация объектов")
+        cl_split = QSplitter(Qt.Horizontal)
+        cl_split.addWidget(self._canvas_dendro)
+        cl_split.addWidget(self._canvas_scatter)
+        cl_split.setSizes([520, 520])
+        self._tabs.addTab(cl_split, "Кластеризация объектов")
 
         self._placeholder = Placeholder(
             "Нет данных",
@@ -112,20 +71,72 @@ class VisualizationPage(BasePage):
         )
         self._root.addWidget(self._placeholder)
         self._tabs.hide()
-        controls.setEnabled(False)
 
         self.state.matrix_changed.connect(self._on_matrix)
+
+    def _build_parameters(self) -> None:
+        panel = QWidget()
+        lay = QVBoxLayout(panel)
+        lay.setContentsMargins(12, 6, 12, 12)
+        lay.setSpacing(10)
+
+        lay.addWidget(SectionTitle("Граф связей"))
+
+        row1 = QHBoxLayout()
+        row1.setSpacing(6)
+        row1.addWidget(QLabel("Порог связи:"))
+        row1.addWidget(HintBadge(
+            "Только пары со сходством Жаккара ≥ порога соединяются ребром. "
+            "Выше порог — реже связи."
+        ))
+        row1.addStretch(1)
+        lay.addLayout(row1)
+
+        self._sp_threshold = QDoubleSpinBox()
+        self._sp_threshold.setRange(0.0, 1.0)
+        self._sp_threshold.setSingleStep(0.05)
+        self._sp_threshold.setDecimals(2)
+        self._sp_threshold.setValue(0.4)
+        self._sp_threshold.valueChanged.connect(self._refresh)
+        lay.addWidget(self._sp_threshold)
+
+        lay.addSpacing(6)
+        lay.addWidget(SectionTitle("Кластеризация"))
+
+        row2 = QHBoxLayout()
+        row2.setSpacing(6)
+        row2.addWidget(QLabel("Кластеров:"))
+        row2.addWidget(HintBadge(
+            "На сколько групп разбить объекты в дендрограмме и MDS-проекции."
+        ))
+        row2.addStretch(1)
+        lay.addLayout(row2)
+
+        self._sp_clusters = QSpinBox()
+        self._sp_clusters.setRange(1, 20)
+        self._sp_clusters.setValue(3)
+        self._sp_clusters.valueChanged.connect(self._refresh)
+        lay.addWidget(self._sp_clusters)
+
+        lay.addSpacing(8)
+        self._btn = QPushButton("Обновить")
+        self._btn.setObjectName("Primary")
+        self._btn.clicked.connect(self._refresh)
+        lay.addWidget(self._btn)
+
+        lay.addStretch(1)
+        self._params = panel
 
     def _on_matrix(self, matrix: BinaryMatrix | None) -> None:
         if matrix is None:
             self._tabs.hide()
             self._placeholder.show()
-            self._controls.setEnabled(False)
+            self._params.setEnabled(False)
             self._summary.hide()
             return
         self._placeholder.hide()
         self._tabs.show()
-        self._controls.setEnabled(True)
+        self._params.setEnabled(True)
         self._summary.show()
         self._refresh()
 

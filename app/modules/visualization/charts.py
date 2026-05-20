@@ -22,9 +22,6 @@ def plot_feature_importance(
     ax.set_title(title)
     ax.set_xlabel("вклад в дифференциацию объектов")
     ax.grid(axis="x", linestyle="--", alpha=0.3)
-    fig.tight_layout()
-
-
 def plot_object_ranking(
     fig: Figure,
     ranking: pd.DataFrame,
@@ -38,9 +35,6 @@ def plot_object_ranking(
     ax.set_title(title)
     ax.set_xlabel(value)
     ax.grid(axis="x", linestyle="--", alpha=0.3)
-    fig.tight_layout()
-
-
 def plot_richness(
     fig: Figure,
     bm: BinaryMatrix,
@@ -60,4 +54,3 @@ def plot_richness(
     ax.set_ylabel("|A_i|")
     ax.tick_params(axis="x", rotation=45)
     ax.grid(axis="y", linestyle="--", alpha=0.3)
-    fig.tight_layout()
